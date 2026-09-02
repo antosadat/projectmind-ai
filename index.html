@@ -1,0 +1,30 @@
+<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ProjectMind Voice Robot</title>
+<style>
+body{margin:0;font-family:Arial;background:#f7fbff;color:#172033}.app{max-width:520px;margin:auto;padding:20px}.brand{font-size:26px;font-weight:800}.brand span{color:#1677ff}
+.card,.action,.settings{background:#fff;border:1px solid #e3ebf4;border-radius:22px;padding:18px;margin-top:16px;box-shadow:0 8px 25px #dfeaf533}
+.robot{text-align:center;font-size:60px}.status{text-align:center;font-weight:bold}.answer{min-height:90px;text-align:center;color:#516176;padding:14px}
+.mic{display:block;margin:10px auto;width:92px;height:92px;border:0;border-radius:50%;background:#1677ff;color:white;font-size:35px}.mic.on{background:#e34b5f}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.action{text-align:left;margin:0;font-size:15px}.action b{display:block;margin-top:6px}input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #dce5ee;border-radius:12px;margin-top:8px}
+button{cursor:pointer}.btn{padding:10px 14px;border:0;border-radius:10px;background:#172033;color:#fff;margin-top:8px}.hint{font-size:12px;color:#65758b;text-align:center}
+</style><body><div class="app">
+<div class="brand">Project<span>Mind</span> 🤖</div>
+<div class="card"><div class="robot">🤖</div><div class="status" id="status">Ready to talk</div><div class="answer" id="answer">Halo! Tekan mikrofon dan bicara dengan saya.</div>
+<button class="mic" id="mic">🎤</button><div class="hint">Contoh: “Apa yang harus saya follow up hari ini?”</div><p id="transcript" class="hint"></p></div>
+<div class="grid">
+<button class="action" onclick="quick('Buatkan daily project priority saya.')">📋<b>Daily Priority</b></button>
+<button class="action" onclick="quick('Bantu buat follow up PMO yang profesional.')">⚠️<b>Follow Up</b></button>
+<button class="action" onclick="quick('Buatkan project status summary.')">📊<b>Project Status</b></button>
+<button class="action" onclick="quick('Buatkan recovery plan untuk task delayed.')">🧠<b>Recovery Plan</b></button>
+</div>
+<div class="settings"><b>AI Connection (Optional)</b><div class="hint">Isi URL n8n Webhook untuk jawaban AI penuh.</div>
+<input id="webhook" placeholder="https://your-n8n/webhook/projectmind"><button class="btn" onclick="save()">Save Connection</button></div>
+</div>
+<script>
+const R=window.SpeechRecognition||window.webkitSpeechRecognition,mic=document.getElementById('mic'),answer=document.getElementById('answer'),status=document.getElementById('status'),tr=document.getElementById('transcript'),wh=document.getElementById('webhook');
+wh.value=localStorage.pmwh||'';
+let r;if(R){r=new R();r.lang='id-ID';r.onstart=()=>{status.textContent='Listening...';mic.classList.add('on')};r.onend=()=>{status.textContent='Ready to talk';mic.classList.remove('on')};r.onresult=e=>ask(e.results[0][0].transcript);r.onerror=e=>status.textContent='Voice error: '+e.error;mic.onclick=()=>r.start()}else{status.textContent='Gunakan Chrome Android untuk fitur voice.'}
+function save(){localStorage.pmwh=wh.value.trim();answer.textContent='AI connection saved.'}
+async function ask(q){tr.textContent='You: '+q;status.textContent='Thinking...';let a='';try{if(localStorage.pmwh){let x=await fetch(localStorage.pmwh,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,source:'ProjectMind Mobile'})});let d=await x.json();a=d.reply||d.output||d.message}else a=local(q)}catch(e){a='Tidak bisa menghubungi AI workflow. Periksa URL n8n Webhook.'}answer.textContent=a;tr.textContent+=' | ProjectMind: '+a;speak(a);status.textContent='Ready to talk'}
+function local(q){q=q.toLowerCase();if(q.includes('delayed')||q.includes('recovery'))return'Untuk recovery plan, identifikasi root cause, corrective action, PIC, dependency, committed date, dan checkpoint progress.';if(q.includes('follow'))return'Untuk follow up PMO, siapkan outstanding item, PIC, required action, ETA, dan project impact.';return'Saya mendengar: '+q+'. Hubungkan ke n8n untuk jawaban AI penuh.'}
+function quick(q){ask(q)}function speak(t){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='id-ID';speechSynthesis.speak(u)}
+</script></body></html>
