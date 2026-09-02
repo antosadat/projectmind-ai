@@ -1,13 +1,23 @@
-# ProjectMind Voice Robot
+# ProjectMind AI
 
-Cara paling mudah:
-1. Upload file ke GitHub Pages atau Netlify.
-2. Buka dari Chrome Android.
-3. Izinkan Microphone.
-4. Tekan tombol mikrofon.
+ProjectMind AI is a Cloudflare Worker-based PMO intelligence dashboard.
 
-Untuk AI penuh:
-- Buat n8n workflow: Webhook -> AI Agent -> Respond to Webhook.
-- Request: {"message":"...","source":"ProjectMind Mobile"}
-- Response: {"reply":"Jawaban AI"}
-- Jangan simpan API key AI langsung di aplikasi mobile.
+## Routes
+- `/` — Mobile-friendly ProjectMind dashboard
+- `/api/health` — Worker and AI configuration health
+- `/api/chat` — PMO AI assistant
+
+## AI configuration
+Add the following secret in Cloudflare Worker **Settings → Variables and secrets**:
+
+- `OPENAI_API_KEY` (Secret)
+
+Optional:
+- `OPENAI_MODEL` (Text variable, defaults to `gpt-4.1-mini`)
+
+Do not commit API keys into GitHub.
+
+## Deployment
+Cloudflare Workers Builds deploys changes pushed to the configured production branch using:
+
+`npx wrangler deploy`
