@@ -142,6 +142,46 @@ function exportExecutivePpt(){
     out.total=Object.values(out.counts).reduce((a,b)=>a+b,0);
     return out
   }
+  function parseTaskPivotHealth(){
+    const phases=['Work Completed','Work In Progress','At Risk','Delayed','On Track'];
+    const norm=v=>String(v||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+    const out={rows:[],health:'',rag:''};
+    let header=-1,pi=-1,ci=-1,hi=-1,ri=-1;
+    for(let i=0;i<Math.min(pvRaw.length,80);i++){
+      const h=(pvRaw[i]||[]).map(v=>String(v||'').trim());
+      pi=h.findIndex(v=>/^Phase$/i.test(v));ci=h.findIndex(v=>/^%\s*Complete$/i.test(v));hi=h.findIndex(v=>/^Health$/i.test(v));ri=h.findIndex(v=>/^RAG$/i.test(v));
+      if(pi>=0&&ci>=0&&hi>=0&&ri>=0){header=i;break}
+    }
+    if(header>=0){
+      let lastHealth='',lastRag='';
+      for(let i=header+1;i<Math.min(pvRaw.length,header+40);i++){
+        const r=pvRaw[i]||[],phase=String(r[pi]||'').trim();
+        if(!phase)continue;
+        const canonical=phases.find(x=>norm(x)===norm(phase));
+        if(!canonical){if(out.rows.length)break;continue}
+        const raw=r[ci],num=n(raw);
+        const complete=num<=1?Math.round(num*100):Math.round(num);
+        const health=String(r[hi]||'').trim();const rag=String(r[ri]||'').trim();
+        if(health)lastHealth=health;if(rag)lastRag=rag;
+        out.rows.push([canonical,complete+'%']);
+      }
+      out.health=lastHealth;out.rag=lastRag;
+    }
+    if(out.rows.length){
+      const seen=new Map(out.rows.map(x=>[x[0],x]));
+      out.rows=phases.map(x=>seen.get(x)).filter(Boolean);
+      return out;
+    }
+    const fallback=[
+      ['Work Completed',pct(completed)+'%'],
+      ['Work In Progress',(100-pct(completed))+'%'],
+      ['At Risk',pct(risk)+'%'],
+      ['Delayed',pct(delayed)+'%'],
+      ['On Track',pct(ontrack)+'%']
+    ];
+    return {rows:fallback,health:delayed?'Delayed':risk?'At Risk':'On Track',rag:delayed?'Red':risk?'Amber':'Green'};
+  }
+
   function parseStreamAttention(){
     let rows=[],header=-1;
     for(let i=0;i<needRaw.length;i++){let r=needRaw[i].map(v=>String(v||'').trim());if(r.some(v=>/^Stream$/i.test(v))&&r.some(v=>/DELAYED/i.test(v))){header=i;break}}
@@ -206,7 +246,7 @@ function exportExecutivePpt(){
     const order=new Map(canonical.map((x,i)=>[x,i]));
     return Object.values(map).sort((a,b)=>(order.has(a.stream)?order.get(a.stream):999)-(order.has(b.stream)?order.get(b.stream):999)||a.start-b.start);
   }
-  const health=parsePivot(),streams=parseStreamAttention(),timeline=parseTimeline(),total=health.total||tasks.length,completed=health.counts.Completed,delayed=health.counts.Delayed,risk=health.counts['At Risk'],ontrack=health.counts['On Track'],exception=delayed+risk,pct=x=>total?Math.round(x/total*100):0;
+  const health=parsePivot(),streams=parseStreamAttention(),timeline=parseTimeline(),total=health.total||tasks.length,completed=health.counts.Completed,delayed=health.counts.Delayed,risk=health.counts['At Risk'],ontrack=health.counts['On Track'],exception=delayed+risk,pct=x=>total?Math.round(x/total*100):0,taskPivotHealth=parseTaskPivotHealth();
   function topNeed(){
     let rows=need.filter(r=>String(r['Task Requiring Attention']||r['Task']||'').trim());
     if(!rows.length&&streams.length){
@@ -240,13 +280,26 @@ function exportExecutivePpt(){
   sl.addShape(pptx.ShapeType.rect,{x:.85,y:1.55,w:7.9,h:.40,fill:{color:'F8F8F7',transparency:100},line:{color:'4B5158',width:.55}});
   sl.addText('Status Overview • Risk Concentration • Recovery Focus',{x:.98,y:1.67,w:7.55,h:.16,fontSize:12,color:'2D343B',margin:0});
   [['TOTAL ACTIVITIES',total,C.cyan],['COMPLETED',completed,C.green],['DELAYED',delayed,C.red],['AT RISK',risk,C.amber]].forEach((z,i)=>chip(sl,.8+i*2.35,2.55,2.15,z[0],z[1],z[2],'FFFFFF'));
-  const phaseRows=[['Work Completed',pct(completed)+'%'],['Work In Progress',(100-pct(completed))+'%'],['At Risk',pct(risk)+'%'],['Delayed',pct(delayed)+'%'],['On Track',pct(ontrack)+'%']];
-  sl.addShape(pptx.ShapeType.rect,{x:.75,y:4.42,w:4.55,h:2.22,fill:{color:'F8F8F7',transparency:100},line:{color:'444A51',width:.6}});
-  sl.addText('Phase',{x:.86,y:4.57,w:1.9,h:.2,fontSize:12,bold:true,color:'22272D',margin:0});
-  sl.addText('% Complete',{x:2.85,y:4.57,w:1.25,h:.2,fontSize:12,bold:true,color:'22272D',margin:0});
-  sl.addText('Health',{x:4.18,y:4.57,w:.8,h:.2,fontSize:12,bold:true,color:'22272D',margin:0});
-  phaseRows.forEach((r,i)=>{let y=4.86+i*.36;sl.addShape(pptx.ShapeType.rect,{x:.75,y,w:4.55,h:.004,fill:{color:'555A60'},line:{color:'555A60'}});sl.addText(r[0],{x:.88,y:y+.08,w:1.95,h:.18,fontSize:11,color:'2B3239',margin:0});sl.addText(r[1],{x:3.05,y:y+.08,w:.75,h:.18,fontSize:11,color:'2B3239',align:'center',margin:0})});
-  sl.addShape(pptx.ShapeType.ellipse,{x:4.4,y:5.25,w:.58,h:.58,fill:{color:risk>0?C.amber:C.green},line:{color:'26313B',width:1}});
+  // Slide 1 health matrix: source of truth is always the Phase / % Complete / Health / RAG block in Task Pivot.
+  const phaseRows=taskPivotHealth.rows;
+  const tableX=.75,tableY=4.42,tableW=4.55,tableH=2.22,phaseW=1.92,pctW=.92,healthW=1.28,ragW=.43;
+  const healthText=taskPivotHealth.health||'';
+  const healthColor=/delay|red/i.test(healthText)?'E4C0BC':/risk|amber/i.test(healthText)?'F7E1A7':'CDE5D5';
+  const ragText=String(taskPivotHealth.rag||'');
+  const ragColor=/^1(\.0+)?$/i.test(ragText)||/red|delay/i.test(ragText)?'D8663B':/amber|risk|yellow/i.test(ragText)?'F5B332':'7EAE56';
+  sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:tableH,fill:{color:'F8F8F7',transparency:100},line:{color:'444A51',width:.6}});
+  sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:.24,fill:{color:'FFF200'},line:{color:'444A51',width:.45}});
+  [tableX+phaseW,tableX+phaseW+pctW,tableX+phaseW+pctW+healthW].forEach(x=>sl.addShape(pptx.ShapeType.line,{x1:x,y1:tableY,x2:x,y2:tableY+tableH,line:{color:'444A51',width:.45}}));
+  sl.addText('Phase',{x:tableX+.02,y:tableY+.06,w:phaseW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
+  sl.addText('% Complete',{x:tableX+phaseW+.02,y:tableY+.06,w:pctW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
+  sl.addText('Health',{x:tableX+phaseW+pctW+.02,y:tableY+.06,w:healthW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
+  sl.addText('RAG',{x:tableX+phaseW+pctW+healthW+.02,y:tableY+.06,w:ragW-.04,h:.12,fontSize:10,bold:true,align:'center',margin:0});
+  const rowH=(tableH-.24)/5;
+  phaseRows.forEach((r,i)=>{let y=tableY+.24+i*rowH;if(i>0)sl.addShape(pptx.ShapeType.line,{x1:tableX,y1:y,x2:tableX+phaseW+pctW,y2:y,line:{color:'444A51',width:.45}});sl.addText(r[0],{x:tableX+.06,y:y+.055,w:phaseW-.12,h:.13,fontSize:9.5,bold:i<2,color:'22272D',align:'center',margin:0});sl.addText(r[1],{x:tableX+phaseW+.04,y:y+.055,w:pctW-.08,h:.13,fontSize:9.5,color:'22272D',align:'center',margin:0})});
+  sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW,y:tableY+.24,w:healthW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
+  sl.addText(healthText,{x:tableX+phaseW+pctW+.05,y:tableY+1.02,w:healthW-.1,h:.24,fontSize:11,bold:true,color:'20252B',align:'center',margin:0});
+  sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW+healthW,y:tableY+.24,w:ragW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
+  sl.addShape(pptx.ShapeType.ellipse,{x:tableX+phaseW+pctW+healthW+.07,y:tableY+1.03,w:ragW-.14,h:.54,fill:{color:ragColor},line:{color:'9E4B2B',width:.7}});
   sl.addText('Risk / Escalation:',{x:5.55,y:4.46,w:2.5,h:.22,fontSize:12,bold:true,color:'22272D',margin:0});
   const riskLines=[
     delayed?'The project is under delivery pressure with '+delayed+' delayed activities requiring an active recovery path.':'No material delayed backlog is currently detected.',
