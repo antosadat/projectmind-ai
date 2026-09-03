@@ -382,9 +382,18 @@ function exportExecutivePpt(){
 
   // 8 Need Attention
   sl=pptx.addSlide();bg(sl);title(sl,'08. Need Attention — PMO Action Summary','Additional executive exception detail sourced from the Need Attention worksheet.');let nr=topNeed();sl.addText('Task',{x:.75,y:1.42,w:3.55,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Stream',{x:4.42,y:1.42,w:1.1,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Attention Type',{x:5.62,y:1.42,w:1.25,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Priority',{x:6.95,y:1.42,w:.8,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Proposed End',{x:7.82,y:1.42,w:1.0,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('PMO Recommendation',{x:8.95,y:1.42,w:3.15,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});if(!nr.length)sl.addText('No Need Attention detail was detected in the uploaded workbook.',{x:.85,y:2.0,w:8,h:.4,fontSize:12,color:C.muted,margin:0});nr.forEach((r,i)=>{let y=1.78+i*.48,fill=i%2?C.white:'F2F6F9',task=r['Task Requiring Attention']||r['Task']||'',pri=String(r['Priority']||'');sl.addShape(pptx.ShapeType.rect,{x:.7,y,w:11.9,h:.43,fill:{color:fill},line:{color:fill}});sl.addText(String(task),{x:.82,y:y+.08,w:3.45,h:.18,fontSize:7.0,color:C.ink,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Stream']||''),{x:4.42,y:y+.08,w:1.1,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(String(r['Attention Type']||''),{x:5.62,y:y+.08,w:1.25,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(pri,{x:6.95,y:y+.08,w:.8,h:.18,fontSize:6.4,color:/critical/i.test(pri)?C.red:C.amber,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Proposed End']||''),{x:7.82,y:y+.08,w:1.0,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(String(r['PMO Recommendation']||''),{x:8.95,y:y+.06,w:3.15,h:.22,fontSize:6.0,color:C.ink,fit:'shrink',margin:0})});sl.addText('Source of truth for executive health: '+(wi.pivotSheet||'Task Pivot')+'  |  Exception detail: '+(wi.needSheet||'Need Attention'),{x:.85,y:6.65,w:11.5,h:.2,fontSize:7.5,color:C.muted,margin:0});
-  pptx.writeFile({fileName:'ProjectMind_Executive_PMO_Report_'+p.name.replace(/[^a-z0-9]+/gi,'_')+'.pptx'});
+  return pptx.writeFile({fileName:'ProjectMind_Executive_PMO_Report_'+p.name.replace(/[^a-z0-9]+/gi,'_')+'.pptx'});
 }
-document.getElementById('exportPpt').onclick=exportExecutivePpt;
+const exportPptBtn=document.getElementById('exportPpt');
+exportPptBtn.onclick=()=>{
+  const old=exportPptBtn.textContent;
+  try{
+    if(!window.PptxGenJS){alert('PPT engine is still loading. Please wait a moment and try again.');return;}
+    exportPptBtn.disabled=true;exportPptBtn.textContent='Preparing Executive PPT...';
+    const result=exportExecutivePpt();
+    Promise.resolve(result).then(()=>{exportPptBtn.textContent='Executive PPT Downloaded';setTimeout(()=>{exportPptBtn.textContent=old;exportPptBtn.disabled=false;},1800);}).catch(e=>{console.error('Executive PPT export failed',e);alert('Executive PPT export failed: '+(e&&e.message?e.message:'Unknown error'));exportPptBtn.textContent=old;exportPptBtn.disabled=false;});
+  }catch(e){console.error('Executive PPT export failed',e);alert('Executive PPT export failed: '+(e&&e.message?e.message:'Unknown error'));exportPptBtn.textContent=old;exportPptBtn.disabled=false;}
+};
 document.getElementById('askAI').onclick=async()=>{let q=document.getElementById('question').value||'Provide a concise PMO recovery assessment and escalation priorities.',ans=document.getElementById('aiAnswer');ans.value='Analysing project data...';try{let r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,tasks:project().tasks,changes:changes()})}),d=await r.json();ans.value=d.report||'No analysis returned.';document.getElementById('mode').textContent=d.mode==='ai'?'● AI Advisor Connected':'● Local Intelligence Active'}catch(e){ans.value='Unable to reach the analysis service. Local PMO workflow remains available.'}};
 const chatHistory=[];
 let pendingAgentActions=[];
