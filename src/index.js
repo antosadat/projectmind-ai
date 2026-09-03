@@ -88,21 +88,27 @@ function exportExecutivePpt(){
     let countHeader=-1,monthHeader=-1;
     for(let i=0;i<pvRaw.length;i++){
       const r=pvRaw[i].map(v=>String(v||'').trim());
-      if(countHeader<0&&r.some(v=>/^Status$/i.test(v))&&r.some(v=>/^Count of Status$/i.test(v)))countHeader=i;
+      const hasCount=r.some(v=>/^Count of Status$/i.test(v));
+      const hasLabel=r.some(v=>/^Row Labels$/i.test(v));
+      if(countHeader<0&&hasCount&&(hasLabel||r.some(v=>/^Status$/i.test(v))))countHeader=i;
       const monthCount=r.filter(v=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)).length;
-      if(monthHeader<0&&monthCount>=3&&(r.some(v=>/^Status$/i.test(v))||r.some(v=>/^Row Labels$/i.test(v))))monthHeader=i;
+      if(monthHeader<0&&monthCount>=2&&(hasLabel||r.some(v=>/^Status$/i.test(v))))monthHeader=i;
     }
+    const readLabelRow=(r)=>labels.find(x=>r.some(v=>String(v||'').trim().toLowerCase()===x.toLowerCase()));
     if(countHeader>=0){
-      for(let i=countHeader+1;i<Math.min(pvRaw.length,countHeader+10);i++){
-        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=labels.find(x=>r[0].toLowerCase()===x.toLowerCase());
-        if(!lab)continue;out.counts[lab]=n(r.find(v=>/^[-+]?\d+(\.\d+)?$/.test(v))||0);
+      for(let i=countHeader+1;i<Math.min(pvRaw.length,countHeader+30);i++){
+        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=readLabelRow(r);
+        if(!lab)continue;
+        const nums=r.map(n).filter(v=>!isNaN(v));
+        if(nums.length)out.counts[lab]=nums[nums.length-1];
       }
     }
     if(monthHeader>=0){
-      const h=pvRaw[monthHeader].map(v=>String(v||'').trim()),idx=h.map((v,i)=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)?i:-1).filter(i=>i>=0);
+      const h=pvRaw[monthHeader].map(v=>String(v||'').trim());
+      const idx=h.map((v,i)=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)?i:-1).filter(i=>i>=0);
       out.months=idx.map(i=>h[i]);
-      for(let i=monthHeader+1;i<Math.min(pvRaw.length,monthHeader+10);i++){
-        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=labels.find(x=>r[0].toLowerCase()===x.toLowerCase());
+      for(let i=monthHeader+1;i<Math.min(pvRaw.length,monthHeader+30);i++){
+        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=readLabelRow(r);
         if(lab)out.matrix[lab]=idx.map(j=>n(r[j]));
       }
     }
@@ -119,15 +125,56 @@ function exportExecutivePpt(){
     return rows.sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk))
   }
   function parseTimeline(){
-    const rows=Array.isArray(wi.timeline)?wi.timeline:[],map={};
-    rows.forEach(r=>{const stream=String(r['Workstream']||r['Stream']||'General').trim()||'General',task=String(r['Task']||'').trim(),end=r['Proposed End']||r['Finish Date']||r['Baseline Finish']||r['End Date'];if(!task||!end)return;const dt=new Date(end);if(isNaN(dt))return;if(!map[stream])map[stream]={stream,start:dt,end:dt,total:0,delayed:0,risk:0};let x=map[stream];x.total++;if(dt<x.start)x.start=dt;if(dt>x.end)x.end=dt;const st=String(r['Status']||'');if(/delay|overdue/i.test(st))x.delayed++;if(/risk/i.test(st))x.risk++});
+    const parseDate=v=>{
+      if(v instanceof Date&&!isNaN(v))return v;
+      if(typeof v==='number'&&v>20000&&v<70000)return new Date(Date.UTC(1899,11,30)+v*86400000);
+      const s=String(v||'').trim(); if(!s)return null;
+      const d=new Date(s); return isNaN(d)?null:d;
+    };
+    const map={};
+    const add=(stream,task,startV,endV,status)=>{
+      const end=parseDate(endV),start=parseDate(startV)||end;if(!end)return;
+      const k=String(stream||'General').trim()||'General';
+      if(!map[k])map[k]={stream:k,start:start,end:end,total:0,delayed:0,risk:0};
+      const x=map[k]; x.total++; if(start<x.start)x.start=start;if(end>x.end)x.end=end;
+      if(/delay|overdue/i.test(String(status||'')))x.delayed++;
+      if(/risk/i.test(String(status||'')))x.risk++;
+    };
+    const rows=Array.isArray(wi.timeline)?wi.timeline:[];
+    rows.forEach(r=>add(r['Workstream']||r['Stream'],r['Task']||r['Activity'],r['Start Date']||r['Baseline Start']||r['Planned Start'],r['Proposed End']||r['Finish Date']||r['Baseline Finish']||r['End Date'],r['Status']));
+    if(!Object.keys(map).length&&Array.isArray(wi.timelineRaw)){
+      const raw=wi.timelineRaw;
+      for(let h=0;h<Math.min(raw.length,40);h++){
+        const hdr=raw[h].map(v=>String(v||'').trim().toLowerCase());
+        const si=hdr.findIndex(v=>/stream|workstream/.test(v)),ti=hdr.findIndex(v=>/^task$|activity|deliverable/.test(v)),ei=hdr.findIndex(v=>/proposed end|finish|end date|target date|commit/.test(v)),sti=hdr.findIndex(v=>/start|baseline start/.test(v)),ssi=hdr.findIndex(v=>/^status$|health|rag/.test(v));
+        if(si>=0&&ei>=0){
+          for(let i=h+1;i<raw.length;i++){const r=raw[i];if(!r.some(v=>String(v||'').trim()))continue;add(r[si],ti>=0?r[ti]:'',sti>=0?r[sti]:'',r[ei],ssi>=0?r[ssi]:'');}
+          break;
+        }
+      }
+    }
+    if(!Object.keys(map).length){
+      tasks.forEach(t=>add(t.stream,t.task,'',t.eta,t.status));
+    }
+    Object.values(map).forEach(x=>{if(+x.end===+x.start)x.start=new Date(+x.end-21*86400000)});
     return Object.values(map).sort((a,b)=>a.start-b.start)
   }
   const health=parsePivot(),streams=parseStreamAttention(),timeline=parseTimeline(),total=health.total||tasks.length,completed=health.counts.Completed,delayed=health.counts.Delayed,risk=health.counts['At Risk'],ontrack=health.counts['On Track'],exception=delayed+risk,pct=x=>total?Math.round(x/total*100):0;
-  function topNeed(){return need.filter(r=>String(r['Task Requiring Attention']||r['Task']||'').trim()).sort((a,b)=>/critical/i.test(String(b['Priority']||''))-/critical/i.test(String(a['Priority']||''))).slice(0,10)}
+  function topNeed(){
+    let rows=need.filter(r=>String(r['Task Requiring Attention']||r['Task']||'').trim());
+    if(!rows.length){
+      rows=tasks.filter(t=>/delay|overdue|risk/i.test(t.status)).map(t=>({
+        'Task Requiring Attention':t.task,'Stream':t.stream,
+        'Attention Type':/risk/i.test(t.status)?'AT RISK - Schedule Slip':'DELAYED',
+        'Priority':t.priority||'High','Proposed End':t.eta||'TBC',
+        'PMO Recommendation':t.action||'Confirm root cause, accountable PIC, recovery date and dependency closure.'
+      }));
+    }
+    return rows.sort((a,b)=>/critical/i.test(String(b['Priority']||''))-/critical/i.test(String(a['Priority']||''))).slice(0,10)
+  }
 
   // 1 Cover
-  let sl=pptx.addSlide();sl.background={color:C.white};sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:W,h:H,fill:{color:C.bg},line:{color:C.bg}});sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:4.55,h:H,fill:{color:C.navy},line:{color:C.navy}});sl.addShape(pptx.ShapeType.arc,{x:2.8,y:4.6,w:5.4,h:3.8,adjustPoint:.25,rotate:0,line:{color:C.cyan,transparency:35,width:1.5},adjustPoint2:.2});sl.addText('ProjectMind AI',{x:.65,y:.8,w:3.1,h:.3,fontSize:10,color:'B9D7EB',bold:true,margin:0});sl.addText('PROJECT DELIVERY - HEALTH CHECK',{x:.7,y:1.35,w:8.8,h:.45,fontFace:'Aptos Display',fontSize:27,bold:true,color:C.navy,margin:0});sl.addText('Status Overview • Risk Concentration • Recovery Focus',{x:.7,y:1.95,w:8.5,h:.3,fontSize:11,color:C.muted,margin:0});sl.addText(p.name,{x:.7,y:2.65,w:7.4,h:.38,fontSize:15,color:C.blue,bold:true,margin:0});[['TOTAL ACTIVITIES',total,C.blue,C.paleBlue],['COMPLETED',completed,C.green,C.paleGreen],['DELAYED',delayed,C.red,C.paleRed],['AT RISK',risk,C.amber,C.paleAmber]].forEach((z,i)=>chip(sl,.7+i*3.05,4.35,2.72,z[0],z[1],z[2],z[3]));sl.addText('Executive PMO Presentation',{x:.7,y:6.55,w:4,h:.25,fontSize:9,color:C.muted,margin:0});
+  let sl=pptx.addSlide();sl.background={color:C.white};sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:W,h:H,fill:{color:C.bg},line:{color:C.bg}});sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:4.55,h:H,fill:{color:C.navy},line:{color:C.navy}});sl.addText('ProjectMind AI',{x:.65,y:.8,w:3.1,h:.3,fontSize:10,color:'B9D7EB',bold:true,margin:0});sl.addText('PROJECT DELIVERY - HEALTH CHECK',{x:.7,y:1.35,w:8.8,h:.45,fontFace:'Aptos Display',fontSize:27,bold:true,color:C.navy,margin:0});sl.addText('Status Overview • Risk Concentration • Recovery Focus',{x:.7,y:1.95,w:8.5,h:.3,fontSize:11,color:C.muted,margin:0});sl.addText(p.name,{x:.7,y:2.65,w:7.4,h:.38,fontSize:15,color:C.blue,bold:true,margin:0});[['TOTAL ACTIVITIES',total,C.blue,C.paleBlue],['COMPLETED',completed,C.green,C.paleGreen],['DELAYED',delayed,C.red,C.paleRed],['AT RISK',risk,C.amber,C.paleAmber]].forEach((z,i)=>chip(sl,.7+i*3.05,4.35,2.72,z[0],z[1],z[2],z[3]));sl.addText('Executive PMO Presentation',{x:.7,y:6.55,w:4,h:.25,fontSize:9,color:C.muted,margin:0});
 
   // 2 Executive Snapshot
   sl=pptx.addSlide();bg(sl);title(sl,'01. Executive Snapshot','The portfolio is progressing, but delivery pressure is concentrated in a limited number of streams.');[['COMPLETED',completed,pct(completed),C.green,C.paleGreen],['DELAYED',delayed,pct(delayed),C.red,C.paleRed],['ON TRACK',ontrack,pct(ontrack),C.blue,C.paleBlue],['AT RISK',risk,pct(risk),C.amber,C.paleAmber]].forEach((z,i)=>{let x=.75+i*3.08;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.45,w:2.75,h:1.55,rectRadius:.06,fill:{color:z[4]},line:{color:z[4]}});sl.addText(z[0],{x:x+.22,y:1.72,w:2.25,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText(z[1]+' / '+total+'  •  '+z[2]+'%',{x:x+.22,y:2.13,w:2.3,h:.35,fontSize:17,bold:true,color:z[3],margin:0})});sl.addShape(pptx.ShapeType.roundRect,{x:.75,y:3.45,w:11.8,h:2.45,rectRadius:.06,fill:{color:C.white},line:{color:C.line}});sl.addText('Highlight',{x:1.05,y:3.8,w:1.5,h:.25,fontSize:13,bold:true,color:C.navy,margin:0});const h=[pct(completed)+'% of activities are completed, indicating meaningful execution progress.',exception+' activities remain in an exception state (Delayed + At Risk).','The key challenge is delay concentration rather than portfolio-wide deterioration.'];h.forEach((v,i)=>{sl.addShape(pptx.ShapeType.ellipse,{x:1.05,y:4.28+i*.43,w:.1,h:.1,fill:{color:i===1?C.red:C.blue},line:{color:i===1?C.red:C.blue}});sl.addText(v,{x:1.28,y:4.2+i*.43,w:9.8,h:.3,fontSize:10,color:C.ink,margin:0})});sl.addText('Key message: Focus recovery effort where delay concentration and downstream dependency are highest.',{x:1.05,y:5.45,w:10.9,h:.3,fontSize:11,bold:true,color:C.navy,margin:0});
@@ -139,7 +186,9 @@ function exportExecutivePpt(){
   sl=pptx.addSlide();bg(sl);title(sl,'03. Delay Concentration by Stream','The delay is not evenly distributed — a limited number of streams dominate the recovery challenge.');let top=streams.slice(0,2);top.forEach((d,i)=>{let x=.85+i*5.95;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.55,w:5.4,h:1.25,rectRadius:.06,fill:{color:i?C.paleAmber:C.paleRed},line:{color:i?C.paleAmber:C.paleRed}});sl.addText(d.stream.toUpperCase(),{x:x+.28,y:1.84,w:4.75,h:.2,fontSize:10,bold:true,color:C.navy,fit:'shrink',margin:0});sl.addText(d.delayed+' delayed / '+d.total+' total',{x:x+.28,y:2.2,w:4.6,h:.3,fontSize:18,bold:true,color:i?C.amber:C.red,margin:0})});let smx=Math.max(1,...streams.slice(0,8).map(x=>x.delayed));streams.slice(0,8).forEach((d,i)=>{let y=3.25+i*.37,w=6.2*d.delayed/smx;sl.addText(d.stream,{x:.85,y:y+.04,w:2.7,h:.2,fontSize:7.5,color:C.ink,bold:true,fit:'shrink',margin:0});sl.addShape(pptx.ShapeType.roundRect,{x:3.65,y,w,h:.22,rectRadius:.03,fill:{color:C.red},line:{color:C.red}});sl.addText(String(d.delayed),{x:3.75+w,y:y+.02,w:.4,h:.18,fontSize:7,bold:true,color:C.ink,margin:0})});sl.addText('Management implication',{x:9.1,y:3.35,w:2.5,h:.25,fontSize:13,bold:true,color:C.navy,margin:0});sl.addText(top.length?'Prioritize '+top.map(x=>x.stream).join(' and ')+' first, as they account for the highest concentration of delayed commitments.':'Prioritize streams with the highest delay concentration before spreading recovery effort across lower-impact areas.',{x:9.1,y:3.85,w:2.75,h:1.15,fontSize:11,color:C.ink,bold:true,fit:'shrink',margin:0});
 
   // 5 Monthly Delivery Trend
-  sl=pptx.addSlide();bg(sl);title(sl,'04. Monthly Delivery Trend','The current pressure point is concentrated in the highest-volume commitment period, followed by a forward workload that must be protected.');let months=health.months.length?health.months:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'],monthly=months.map((mo,i)=>({mo,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i])}));let peak=monthly.reduce((a,b)=>b.total>a.total?b:a,{mo:'N/A',total:0,delayed:0}),forward=monthly.slice(Math.min(monthly.length,months.indexOf(peak.mo)+1)).reduce((a,b)=>a+b.total,0);chip(sl,.85,1.45,2.55,'Peak Volume',peak.total,C.blue,C.paleBlue);chip(sl,3.65,1.45,2.55,peak.mo+' Delay',peak.delayed,C.red,C.paleRed);chip(sl,6.45,1.45,2.55,'Forward Workload',forward,C.amber,C.paleAmber);sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:2.95,w:11.55,h:2.7,rectRadius:.06,fill:{color:C.white},line:{color:C.line}});let mm=Math.max(1,...monthly.map(x=>x.total));monthly.forEach((d,i)=>{let x=1.2+i*1.25,h=1.75*d.total/mm,y=5.1-h;sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h,fill:{color:C.blue},line:{color:C.blue}});let dh=h*(d.delayed/Math.max(1,d.total));if(dh)sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h:dh,fill:{color:C.red},line:{color:C.red}});sl.addText(d.mo,{x:x-.18,y:5.28,w:.98,h:.2,fontSize:7,color:C.muted,align:'center',margin:0});sl.addText(String(d.total),{x,y:y-.23,w:.62,h:.18,fontSize:7,bold:true,color:C.ink,align:'center',margin:0})});sl.addText('Storyline: '+peak.mo+' is the current pressure point. Recover delayed work while protecting the downstream execution pipeline.',{x:.95,y:6.05,w:11.2,h:.3,fontSize:10.5,bold:true,color:C.navy,align:'center',margin:0});
+  sl=pptx.addSlide();bg(sl);title(sl,'04. Monthly Delivery Trend','The current pressure point is concentrated in the highest-volume commitment period, followed by a forward workload that must be protected.');let months=health.months.length?health.months:[],monthly=[];
+  if(months.length)monthly=months.map((mo,i)=>({mo,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i])}));
+  if(!monthly.some(x=>x.total>0)){let order=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],mm={};tasks.forEach(t=>{let d=new Date(t.eta);if(isNaN(d))return;let mo=order[d.getMonth()];mm[mo]=mm[mo]||{mo,total:0,delayed:0,risk:0};mm[mo].total++;if(/delay|overdue/i.test(t.status))mm[mo].delayed++;if(/risk/i.test(t.status))mm[mo].risk++;});monthly=Object.values(mm);if(!monthly.length){months=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'];monthly=months.map(mo=>({mo,total:0,delayed:0,risk:0}))}}let peak=monthly.reduce((a,b)=>b.total>a.total?b:a,{mo:'N/A',total:0,delayed:0}),forward=monthly.slice(Math.min(monthly.length,months.indexOf(peak.mo)+1)).reduce((a,b)=>a+b.total,0);chip(sl,.85,1.45,2.55,'Peak Volume',peak.total,C.blue,C.paleBlue);chip(sl,3.65,1.45,2.55,peak.mo+' Delay',peak.delayed,C.red,C.paleRed);chip(sl,6.45,1.45,2.55,'Forward Workload',forward,C.amber,C.paleAmber);sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:2.95,w:11.55,h:2.7,rectRadius:.06,fill:{color:C.white},line:{color:C.line}});let mm=Math.max(1,...monthly.map(x=>x.total));monthly.forEach((d,i)=>{let x=1.2+i*1.25,h=1.75*d.total/mm,y=5.1-h;sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h,fill:{color:C.blue},line:{color:C.blue}});let dh=h*(d.delayed/Math.max(1,d.total));if(dh)sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h:dh,fill:{color:C.red},line:{color:C.red}});sl.addText(d.mo,{x:x-.18,y:5.28,w:.98,h:.2,fontSize:7,color:C.muted,align:'center',margin:0});sl.addText(String(d.total),{x,y:y-.23,w:.62,h:.18,fontSize:7,bold:true,color:C.ink,align:'center',margin:0})});sl.addText('Storyline: '+peak.mo+' is the current pressure point. Recover delayed work while protecting the downstream execution pipeline.',{x:.95,y:6.05,w:11.2,h:.3,fontSize:10.5,bold:true,color:C.navy,align:'center',margin:0});
 
   // 5 Timeline by Stream (MPP)
   sl=pptx.addSlide();bg(sl);title(sl,'05. Integrated Timeline — MPP by Stream','Forward delivery path by workstream, highlighting the streams carrying the most schedule pressure.');
@@ -148,7 +197,7 @@ function exportExecutivePpt(){
     const shown=timeline.slice(0,10),minDate=new Date(Math.min(...shown.map(x=>x.start))),maxDate=new Date(Math.max(...shown.map(x=>x.end))),span=Math.max(1,maxDate-minDate),chartX=3.25,chartW=8.75;
     const monthStarts=[];let cur=new Date(minDate.getFullYear(),minDate.getMonth(),1),last=new Date(maxDate.getFullYear(),maxDate.getMonth()+1,1);
     while(cur<=last&&monthStarts.length<12){monthStarts.push(new Date(cur));cur.setMonth(cur.getMonth()+1)}
-    monthStarts.forEach(d=>{let x=chartX+chartW*((d-minDate)/span);sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.2,y:1.52,w:.6,h:.18,fontSize:7,color:C.muted,align:'center',margin:0});sl.addShape(pptx.ShapeType.line,{x1:x,y1:1.78,x2:x,y2:5.95,line:{color:C.line,width:.5,transparency:35}})});
+    monthStarts.forEach(d=>{let x=chartX+chartW*((d-minDate)/span);sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.2,y:1.52,w:.6,h:.18,fontSize:7,color:C.muted,align:'center',margin:0});sl.addShape(pptx.ShapeType.line,{x:x,y:1.78,w:0,h:4.17,line:{color:C.line,width:.5,transparency:35}})});
     shown.forEach((d,i)=>{let y=2.0+i*.38,x1=chartX+chartW*((d.start-minDate)/span),x2=chartX+chartW*((d.end-minDate)/span),w=Math.max(.22,x2-x1),col=d.delayed?C.red:d.risk?C.amber:C.blue;sl.addText(d.stream,{x:.82,y:y+.03,w:2.2,h:.18,fontSize:7.2,bold:true,color:C.ink,fit:'shrink',margin:0});sl.addShape(pptx.ShapeType.roundRect,{x:x1,y,w,h:.2,rectRadius:.03,fill:{color:col},line:{color:col}});sl.addText(d.total+' act.',{x:12.1,y:y+.02,w:.5,h:.16,fontSize:6.2,color:C.muted,margin:0})});
     const hot=shown.slice().sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk)).slice(0,3).filter(x=>x.delayed+x.risk>0);
     sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:6.15,w:11.5,h:.55,rectRadius:.05,fill:{color:C.white},line:{color:C.line}});
