@@ -262,10 +262,47 @@ render();
 </script></body></html>`;
 
 function fallbackReport(tasks,changes,question){const bad=tasks.filter(t=>/delay|overdue|late|blocked/i.test(t.status)),risk=tasks.filter(t=>/risk/i.test(t.status)),det=changes.filter(c=>c.type==='DETERIORATED');return 'PMO ANALYSIS\n\nQuestion: '+question+'\n\nCurrent position: '+bad.length+' delayed/overdue and '+risk.length+' at-risk item(s) out of '+tasks.length+' tracked task(s). '+changes.length+' reporting-cycle movement(s) detected, including '+det.length+' deterioration(s).\n\nPriority actions:\n1. Confirm root cause, corrective action, PIC and recovery ETA for each delayed item.\n2. Validate dependencies before accepting revised commitments.\n3. Escalate deterioration affecting milestones, SIT/UAT or delivery commitments.\n4. Close TBC ownership and ETA gaps.\n5. Reflect final agreed solutions in all related solution documents before the next gate.'}
+
+function localAgentReply(message,context){
+  const q=String(message||'').toLowerCase();
+  const tasks=Array.isArray(context?.tasks)?context.tasks:[];
+  const status=t=>String(t.status||'');
+  const delayed=tasks.filter(t=>/delay|overdue|late|blocked/i.test(status(t)));
+  const risk=tasks.filter(t=>/risk/i.test(status(t)));
+  const completed=tasks.filter(t=>/complete|done|closed/i.test(status(t)));
+  const streamCount=arr=>{const m={};arr.forEach(t=>{const s=String(t.stream||'Unassigned');m[s]=(m[s]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const taskLine=(t,i)=>{const eta=t.eta?' | ETA: '+t.eta:'';const pic=t.pic?' | PIC: '+t.pic:'';const issue=t.issue?' | Issue: '+t.issue:'';const dep=t.dependency?' | Dependency: '+t.dependency:'';return (i+1)+'. '+(t.task||'Unnamed task')+' — '+(t.stream||'General')+eta+pic+issue+dep};
+  const health=()=>{const total=tasks.length,pct=total?Math.round(completed.length/total*100):0;return 'Executive health snapshot for '+(context?.project||'this project')+':\n• Total tracked: '+total+'\n• Completed: '+completed.length+' ('+pct+'%)\n• Delayed / Overdue / Blocked: '+delayed.length+'\n• At Risk: '+risk.length+'\n\nPMO view: '+(delayed.length||risk.length?'delivery pressure requires active recovery and dependency control.':'no material delivery pressure is currently detected from task status data.')};
+  if(!tasks.length)return 'Saya bisa bantu, tetapi belum ada task yang tersedia di project context. Upload/import tracker terlebih dahulu agar analisa bisa berbasis data.';
+  if(/apa.*(delay|terlambat)|yang.*(delay|terlambat)|list.*delay|delayed|overdue|terlambat/.test(q)){
+    if(!delayed.length)return 'Tidak ada task dengan status Delayed, Overdue, Late, atau Blocked pada data yang sedang aktif.';
+    return 'Berikut task yang saat ini membutuhkan recovery attention ('+delayed.length+'):\n\n'+delayed.map(taskLine).join('\n')+'\n\nPMO recommendation: untuk setiap item di atas, kunci root cause, PIC, recovery ETA, dependency, dan impact sebelum commitment berikutnya diterima.';
+  }
+  if(/recovery|recover|rencana.*pulih|pemulihan/.test(q)){
+    const focus=delayed.slice(0,12);
+    if(!focus.length)return 'Tidak ada delayed item yang terdeteksi untuk dibuatkan recovery plan. Fokus berikutnya adalah menjaga forward workload dan dependency control.';
+    return 'Recovery plan — '+(context?.project||'Project')+':\n\n'+focus.map((t,i)=>{const action=t.action||'Confirm root cause and define a measurable recovery action';const eta=t.eta||'TBC';return (i+1)+'. '+(t.task||'Unnamed task')+' ('+(t.stream||'General')+')\n   Action: '+action+'\n   Recovery control: confirm PIC, dependency and revised ETA (current ETA: '+eta+').'}).join('\n\n')+'\n\nGovernance: review daily for critical items and escalate any recovery date that threatens an integrated milestone.';
+  }
+  if(/prioritas|priority|hari ini|today|fokus/.test(q)){
+    const candidates=[...delayed,...risk].sort((a,b)=>String(b.priority||'').localeCompare(String(a.priority||''))).slice(0,10);
+    if(!candidates.length)return 'Prioritas hari ini: protect forward commitments, validate upcoming dependencies, and keep completed work from reopening.';
+    return 'Prioritas PMO saat ini:\n\n'+candidates.map(taskLine).join('\n')+'\n\nUrutan tindakan: 1) unblock delayed work, 2) lock owner and ETA, 3) validate cross-stream dependency, 4) escalate milestone impact.';
+  }
+  if(/escalat|management|management.*perlu|eksekutif/.test(q)){
+    const top=[...delayed,...risk].slice(0,8);
+    return 'Management escalation draft:\n\nCurrent exposure: '+delayed.length+' delayed/overdue/blocked and '+risk.length+' at-risk item(s) from '+tasks.length+' tracked activities.\n\nDecision required:\n'+(top.length?top.map((t,i)=>(i+1)+'. '+(t.task||'Unnamed task')+' — '+(t.stream||'General')+'; owner '+(t.pic||'TBC')+', ETA '+(t.eta||'TBC')+'.').join('\n'):'No critical item currently identified.')+'\n\nPMO ask: confirm accountable owner, recovery commitment, dependency decision and escalation support where the recovery path cannot be controlled within the stream.';
+  }
+  if(/stream|workstream/.test(q)){
+    const rows=streamCount([...delayed,...risk]);
+    return 'Pressure by stream:\n\n'+(rows.length?rows.map((x,i)=>(i+1)+'. '+x[0]+': '+x[1]+' delayed/at-risk item(s)').join('\n'):'No delayed or at-risk stream pressure detected.')+'\n\nUse this as the basis for stream-level governance and recovery sequencing.';
+  }
+  if(/health|kondisi|status|project.*saya|project.*ini/.test(q))return health();
+  return health()+'\n\nUntuk pertanyaan ini: “'+String(message||'')+'”, saya bisa langsung bantu dengan data dashboard. Coba tanyakan secara spesifik, misalnya: “apa saja yang delay”, “buat recovery plan”, “prioritas hari ini”, “stream mana paling berisiko”, atau “apa yang perlu diescalate ke management”.';
+}
 export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==='/health')return Response.json({status:'online',service:'ProjectMind AI Ultimate',version:'5.0'});if(url.pathname==='/api/chat'&&request.method==='POST'){
   const body=await request.json(),message=String(body.message||''),history=Array.isArray(body.history)?body.history.slice(-12):[],context=body.context||{};
-  const local='I can help with that. Current dashboard context contains '+((context.tasks||[]).length)+' tracked task(s). For a full data-grounded analysis, connect an AI provider through OPENAI_API_KEY.';
-  if(!env.OPENAI_API_KEY)return Response.json({reply:local,mode:'local'});
+  const local=localAgentReply(message,context);
+  if(!env.OPENAI_API_KEY)return Response.json({reply:local,actions:[],mode:'local'});
   try{
     const system='You are ProjectMind Agent, a senior global PMO, transformation and delivery advisor embedded in ProjectMind AI. Understand natural language in any wording, especially Indonesian and English. Use supplied dashboard context as the source of truth for project-specific facts and never invent project data. You can recommend or propose actions. Return STRICT JSON only with this schema: {"reply":"concise conversational answer","actions":[{"type":"update_task","task":"exact task name","status":"","priority":"","pic":"","eta":"","action":"","dependency":"","impact":"","issue":""},{"type":"create_need_attention","task":"","stream":"","status":"At Risk","priority":"High","pic":"","eta":"","action":"","dependency":"","impact":"","issue":""}]}. Actions are OPTIONAL and must only be proposed when the user explicitly asks to change/create/update something or clearly requests execution. Never claim an action has been applied; the UI requires user confirmation.';
     const messages=[{role:'system',content:system},{role:'system',content:'CURRENT PROJECT CONTEXT:\n'+JSON.stringify(context)},...history.filter(x=>x&&x.content).map(x=>({role:x.role==='assistant'?'assistant':'user',content:String(x.content)}))];
