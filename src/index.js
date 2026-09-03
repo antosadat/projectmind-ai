@@ -294,8 +294,8 @@ function exportExecutivePpt(){
   sl.addText('% Complete',{x:tableX+phaseW+.02,y:tableY+.06,w:pctW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
   sl.addText('Health',{x:tableX+phaseW+pctW+.02,y:tableY+.06,w:healthW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
   sl.addText('RAG',{x:tableX+phaseW+pctW+healthW+.02,y:tableY+.06,w:ragW-.04,h:.12,fontSize:10,bold:true,align:'center',margin:0});
-  const rowH=(tableH-.24)/5;
-  phaseRows.forEach((r,i)=>{let y=tableY+.24+i*rowH;if(i>0)sl.addShape(pptx.ShapeType.rect,{x:tableX,y,w:phaseW+pctW,h:.006,fill:{color:'444A51'},line:{color:'444A51',width:.1}});sl.addText(r[0],{x:tableX+.06,y:y+.055,w:phaseW-.12,h:.13,fontSize:9.5,bold:i<2,color:'22272D',align:'center',margin:0});sl.addText(r[1],{x:tableX+phaseW+.04,y:y+.055,w:pctW-.08,h:.13,fontSize:9.5,color:'22272D',align:'center',margin:0})});
+  const taskPivotRowH=(tableH-.24)/5;
+  phaseRows.forEach((r,i)=>{let y=tableY+.24+i*taskPivotRowH;if(i>0)sl.addShape(pptx.ShapeType.rect,{x:tableX,y,w:phaseW+pctW,h:.006,fill:{color:'444A51'},line:{color:'444A51',width:.1}});sl.addText(r[0],{x:tableX+.06,y:y+.055,w:phaseW-.12,h:.13,fontSize:9.5,bold:i<2,color:'22272D',align:'center',margin:0});sl.addText(r[1],{x:tableX+phaseW+.04,y:y+.055,w:pctW-.08,h:.13,fontSize:9.5,color:'22272D',align:'center',margin:0})});
   sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW,y:tableY+.24,w:healthW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
   sl.addText(healthText,{x:tableX+phaseW+pctW+.05,y:tableY+1.02,w:healthW-.1,h:.24,fontSize:11,bold:true,color:'20252B',align:'center',margin:0});
   sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW+healthW,y:tableY+.24,w:ragW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
