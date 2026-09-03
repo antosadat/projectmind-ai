@@ -16,6 +16,13 @@ const html = String.raw`<!doctype html>
 <section class="section" id="executive"><div class="split"><div class="panel"><div class="row"><h3 class="grow">Executive Daily Brief</h3><button class="btn primary" id="generateBrief">Generate</button><button class="btn" id="copyBrief">Copy</button><button class="btn good" id="exportPpt">Export Executive PPT</button></div><textarea id="brief" placeholder="Generate an executive-ready project brief."></textarea></div><div class="panel"><h3>Management Focus</h3><div id="managementFocus"></div></div></div></section>
 <section class="section" id="advisor"><div class="split"><div class="panel"><h3>Ask ProjectMind AI</h3><textarea id="question" placeholder="Example: Which delayed items should be escalated today, and why?"></textarea><div class="row" style="margin-top:10px"><button class="btn primary" id="askAI">Analyse Portfolio / Project</button></div><textarea id="aiAnswer" placeholder="Analysis will appear here." style="margin-top:12px"></textarea></div><div class="panel"><h3>Advisor Scope</h3><div class="alert"><b>Recovery planning</b><br><span class="mini muted">Prioritise delayed commitments and identify immediate corrective actions.</span></div><div class="alert"><b>Escalation logic</b><br><span class="mini muted">Separate delivery noise from issues requiring management intervention.</span></div><div class="alert"><b>Executive communication</b><br><span class="mini muted">Convert tracker data into concise, decision-oriented management updates.</span></div></div></div></section>
 <section class="section" id="data"><div class="layout"><div class="panel"><h3>Import Project Tracker</h3><div class="drop"><input type="file" id="file" accept=".xlsx,.xls,.csv"><p>ProjectMind now scans every worksheet, detects the best tracker sheet and supports common PMO headers including Task, Status, Owner, Proposed End, Baseline Finish, Next Action, Dependency and Blocker.</p></div><div id="mapping" class="mini muted" style="margin-top:10px"></div><div id="sheetControl" class="row" style="margin-top:10px"></div></div><div class="panel"><h3>Data Quality & Governance</h3><div id="quality"></div><hr style="border-color:var(--line)"><div class="row"><button class="btn warn" id="demoData">Load Demo PMO Data</button><button class="btn danger" id="clearProject">Clear Current Project Data</button></div></div></div></section>
+<button class="chat-fab" id="chatFab" title="Chat with ProjectMind Agent" aria-label="Open ProjectMind Agent">🧠</button>
+<div class="chatbox" id="chatbox" role="dialog" aria-label="ProjectMind Agent">
+  <div class="chathead"><div><b>ProjectMind Agent</b><div class="mini muted">Portfolio-aware PMO Agent</div></div><button class="btn" id="chatClose" aria-label="Close chat">×</button></div>
+  <div class="chatmsgs" id="chatMsgs"></div>
+  <div class="quick"><button data-q="Apa kondisi project saya saat ini?">Project health</button><button data-q="Apa prioritas saya hari ini?">Prioritas hari ini</button><button data-q="Buat recovery plan untuk task delayed">Recovery plan</button><button data-q="Apa yang harus saya escalate ke management?">Management escalation</button></div>
+  <div class="chatinput"><textarea id="chatInput" placeholder="Tanya dengan bahasa apa pun..."></textarea><button id="chatSend">Send</button></div>
+</div>
 <div class="footer">ProjectMind AI Ultimate · PMO Operating System · Continuous enhancement foundation</div></div>
 <script>
 const K='projectmind-ultimate-v2';let state=JSON.parse(localStorage.getItem(K)||'{"projects":[{"id":"default","name":"ProjectMind Demo","tasks":[]}],"active":"default","snapshots":{}}');let importBook=null,importFileName='';
@@ -246,10 +253,10 @@ async function sendAgentMessage(forced){
     chatHistory.push({role:'assistant',content:d.reply||d.report||''});document.getElementById('mode').textContent=d.mode==='ai'?'● AI Agent Connected':'● Local Intelligence Active';
   }catch(e){msgs.lastChild.remove();addChat('agent','Connection to the AI Agent is unavailable. Please try again.');}
 }
-document.getElementById('chatFab').onclick=()=>{document.getElementById('chatbox').classList.add('open');if(!chatHistory.length)addChat('agent','Hi, I am your ProjectMind Agent. Ask me anything about your project in Bahasa Indonesia or English. I can analyse delays, risks, priorities, recovery actions and management escalation based on the dashboard data.')};
-document.getElementById('chatClose').onclick=()=>document.getElementById('chatbox').classList.remove('open');
-document.getElementById('chatSend').onclick=()=>sendAgentMessage();
-document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAgentMessage()}});
+if(document.getElementById('chatFab'))document.getElementById('chatFab').onclick=()=>{document.getElementById('chatbox').classList.add('open');if(!chatHistory.length)addChat('agent','Hi, I am your ProjectMind Agent. Ask me anything about your project in Bahasa Indonesia or English. I can analyse delays, risks, priorities, recovery actions and management escalation based on the dashboard data.')};
+if(document.getElementById('chatClose'))document.getElementById('chatClose').onclick=()=>document.getElementById('chatbox').classList.remove('open');
+if(document.getElementById('chatSend'))document.getElementById('chatSend').onclick=()=>sendAgentMessage();
+if(document.getElementById('chatInput'))document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAgentMessage()}});
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>sendAgentMessage(b.dataset.q));
 render();
 </script></body></html>`;
