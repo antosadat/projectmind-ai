@@ -272,8 +272,12 @@ function exportExecutivePpt(){
   sl=pptx.addSlide();bg(sl);title(sl,'Portfolio Health Distribution','Current activity status across the full project portfolio.');
   sl.addText('Activities',{x:2.55,y:1.82,w:2.2,h:.3,fontSize:18,bold:true,color:'20262D',align:'center',margin:0});
   const dist=[['At Risk',risk,C.amber],['Completed',completed,C.green],['Delayed',delayed,C.red],['On Track',ontrack,C.cyan]],sum=Math.max(1,total),cx=3.18,cy=4.0,R=1.45;
-  if(pptx.ChartType&&pptx.ChartType.doughnut){sl.addChart(pptx.ChartType.doughnut,[{name:'Activities',labels:dist.map(d=>d[0]),values:dist.map(d=>d[1])}],{x:1.55,y:2.05,w:3.25,h:3.25,showLegend:false,showTitle:false,showValue:true,showPercent:false,holeSize:52,dataLabelPosition:'bestFit',chartColors:dist.map(d=>d[2]),showValue:true,fontFace:'Aptos',fontSize:9});}
-  else {dist.forEach((d,i)=>{let y=2.35+i*.58,w=2.2*d[1]/sum;sl.addText(d[0],{x:1.25,y:y+.06,w:1.05,h:.14,fontSize:7.5,color:'30363D',margin:0});sl.addShape(pptx.ShapeType.rect,{x:2.35,y,w,h:.22,fill:{color:d[2]},line:{color:d[2]}});sl.addText(String(d[1]),{x:2.42+w,y:y+.04,w:.35,h:.12,fontSize:7,bold:true,color:'252B31',margin:0})});}
+  let chartAdded=false;
+  try{
+    const CT=(PptxGenJS&&PptxGenJS.ChartType)||(pptx&&pptx.ChartType);
+    if(CT&&CT.doughnut){sl.addChart(CT.doughnut,[{name:'Activities',labels:dist.map(d=>d[0]),values:dist.map(d=>d[1])}],{x:1.55,y:2.05,w:3.25,h:3.25,showLegend:false,showTitle:false,showValue:true,showPercent:false,holeSize:52,dataLabelPosition:'bestFit',chartColors:dist.map(d=>d[2]),fontFace:'Aptos',fontSize:9});chartAdded=true;}
+  }catch(e){console.warn('Doughnut chart fallback',e);}
+  if(!chartAdded){dist.forEach((d,i)=>{let y=2.35+i*.58,w=2.2*d[1]/sum;sl.addText(d[0],{x:1.25,y:y+.06,w:1.05,h:.14,fontSize:7.5,color:'30363D',margin:0});sl.addShape(pptx.ShapeType.rect,{x:2.35,y,w,h:.22,fill:{color:d[2]},line:{color:d[2]}});sl.addText(String(d[1]),{x:2.42+w,y:y+.04,w:.35,h:.12,fontSize:7,bold:true,color:'252B31',margin:0})});}
   // reliable donut fallback overlay
   sl.addShape(pptx.ShapeType.ellipse,{x:cx-.62,y:cy-.62,w:1.24,h:1.24,fill:{color:'F6F6F5'},line:{color:'F6F6F5'}});
   let legendY=5.55;dist.forEach((d,i)=>{let x=1.65+i*1.1;sl.addShape(pptx.ShapeType.rect,{x,y:legendY,w:.08,h:.08,fill:{color:d[2]},line:{color:d[2]}});sl.addText(d[0],{x:x+.13,y:legendY-.01,w:.9,h:.13,fontSize:7.5,color:'30363D',margin:0})});
