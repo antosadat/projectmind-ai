@@ -27,14 +27,19 @@ function clean(rows){return rows.filter(r=>Object.values(r).some(v=>String(v).tr
 function sheetMeta(ws,name){let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false}),best={score:-1,row:0,headers:[]};for(let i=0;i<Math.min(rows.length,12);i++){let h=rows[i].map(String);let score=0;Object.values(aliases).forEach(arr=>{if(h.some(x=>arr.includes(key(x))))score++});if(score>best.score)best={score,row:i,headers:h}}let objs=XLSX.utils.sheet_to_json(ws,{range:best.row,defval:'',raw:false,blankrows:false});let usable=objs.filter(r=>pick(r,'task')).length;return{name,score:best.score,headerRow:best.row+1,usable,rows:objs}}
 function scanWorkbook(wb){return wb.SheetNames.map(n=>sheetMeta(wb.Sheets[n],n)).sort((a,b)=>(b.score*100+b.usable)-(a.score*100+a.usable))}
 function findSheet(rx){return importBook&&importBook.SheetNames.find(n=>rx.test(n))}
-function rowsOf(name,limit=500){if(!name)return[];let ws=importBook.Sheets[name];return XLSX.utils.sheet_to_json(ws,{defval:'',raw:false,blankrows:false}).slice(0,limit)}
+function rawRowsOf(name,limit=500){if(!name)return[];return XLSX.utils.sheet_to_json(importBook.Sheets[name],{header:1,defval:'',raw:false,blankrows:false}).slice(0,limit)}
+function rowsWithDetectedHeader(raw,required){let hi=-1;for(let i=0;i<Math.min(raw.length,30);i++){let h=raw[i].map(v=>String(v||'').trim());if(required.every(rx=>h.some(v=>rx.test(v)))){hi=i;break}}if(hi<0)return[];let h=raw[hi].map((v,i)=>String(v||'').trim()||('Column '+(i+1)));return raw.slice(hi+1).filter(r=>r.some(v=>String(v||'').trim())).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??''])))}
+function parseNeedAttentionRaw(raw){return rowsWithDetectedHeader(raw,[/^Task Requiring Attention$/i,/^Attention Type$/i,/^Priority$/i,/Proposed End/i,/PMO Recommendation/i]).filter(r=>String(r['Task Requiring Attention']||'').trim())}
+function parseTimelineRaw(raw){return rowsWithDetectedHeader(raw,[/^Task$/i,/Workstream|Stream/i,/Proposed End|Baseline Finish|Finish Date/i])}
+function rowsOf(name,limit=500){return rawRowsOf(name,limit)}
 function workbookIntelligence(){
   if(!importBook)return{};
-  const get=(rx)=>findSheet(rx),raw=(name,limit=500)=>name?XLSX.utils.sheet_to_json(importBook.Sheets[name],{header:1,defval:'',raw:false,blankrows:false}).slice(0,limit):[];
+  const get=(rx)=>findSheet(rx);
   let out={sheets:importBook.SheetNames.slice()};
   out.timelineSheet=get(/mpp|timeline|calendar/i);out.needSheet=get(/need\s*attention/i);out.pivotSheet=get(/task\s*pivot|pivot/i);out.lowerSheet=get(/summary.*lower|lower.*summary/i);out.prodSheet=get(/summary.*prod|prod.*summary/i);
-  out.timeline=rowsOf(out.timelineSheet,400);out.needAttention=rowsOf(out.needSheet,300);out.lower=rowsOf(out.lowerSheet,200);out.prod=rowsOf(out.prodSheet,200);out.pivot=rowsOf(out.pivotSheet,400);
-  out.pivotRaw=raw(out.pivotSheet,500);out.needRaw=raw(out.needSheet,500);
+  out.timelineRaw=rawRowsOf(out.timelineSheet,500);out.needRaw=rawRowsOf(out.needSheet,500);out.pivotRaw=rawRowsOf(out.pivotSheet,500);
+  out.timeline=parseTimelineRaw(out.timelineRaw);out.needAttention=parseNeedAttentionRaw(out.needRaw);
+  out.lower=rowsOf(out.lowerSheet,200);out.prod=rowsOf(out.prodSheet,200);out.pivot=rowsOf(out.pivotSheet,400);
   return out
 }
 function envSummary(rows,mode){
@@ -79,18 +84,28 @@ function exportExecutivePpt(){
   function title(sl,t,st){sl.addText(t,{x:.65,y:.42,w:9.4,h:.42,fontFace:'Aptos Display',fontSize:24,bold:true,color:C.navy,margin:0});if(st)sl.addText(st,{x:.68,y:.94,w:11.7,h:.28,fontSize:9,color:C.muted,margin:0})}
   function chip(sl,x,y,w,label,value,color,pale){sl.addShape(pptx.ShapeType.roundRect,{x,y,w,h:1.12,rectRadius:.08,fill:{color:pale},line:{color:pale}});sl.addText(String(label).toUpperCase(),{x:x+.18,y:y+.16,w:w-.36,h:.18,fontSize:7,color:C.muted,bold:true,margin:0});sl.addText(String(value),{x:x+.18,y:y+.43,w:w-.36,h:.45,fontSize:24,color,bold:true,margin:0})}
   function parsePivot(){
-    let out={counts:{},months:[],matrix:{}}, labels=['At Risk','Completed','Delayed','On Track'];
+    const labels=['At Risk','Completed','Delayed','On Track'],out={counts:{},months:[],matrix:{}};
+    let countHeader=-1,monthHeader=-1;
     for(let i=0;i<pvRaw.length;i++){
-      let r=pvRaw[i].map(v=>String(v||'').trim());
-      let k=labels.find(x=>r.some(v=>v.toLowerCase()===x.toLowerCase()));
-      if(k){let nums=r.map(n).filter(v=>v>0);if(nums.length)out.counts[k]=nums[nums.length-1]}
-      let mi=r.findIndex(v=>/^Apr$|^May$|^Jun$|^Jul$|^Aug$|^Sep$|^Oct$|^Nov$|^Dec$|^Jan$|^Feb$|^Mar$/i.test(v));
-      if(mi>=0&&r.some(v=>/^Row Labels$/i.test(v))){
-        out.months=r.slice(mi).filter(v=>/^Apr$|^May$|^Jun$|^Jul$|^Aug$|^Sep$|^Oct$|^Nov$|^Dec$|^Jan$|^Feb$|^Mar$/i.test(v));
-        for(let j=i+1;j<Math.min(pvRaw.length,i+12);j++){let rr=pvRaw[j].map(v=>String(v||'').trim()),lab=labels.find(x=>rr.some(v=>v.toLowerCase()===x.toLowerCase()));if(!lab)continue;let li=rr.findIndex(v=>v.toLowerCase()===lab.toLowerCase()),start=mi;out.matrix[lab]=out.months.map((_,z)=>n(rr[start+z]))}
+      const r=pvRaw[i].map(v=>String(v||'').trim());
+      if(countHeader<0&&r.some(v=>/^Status$/i.test(v))&&r.some(v=>/^Count of Status$/i.test(v)))countHeader=i;
+      const monthCount=r.filter(v=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)).length;
+      if(monthHeader<0&&monthCount>=3&&(r.some(v=>/^Status$/i.test(v))||r.some(v=>/^Row Labels$/i.test(v))))monthHeader=i;
+    }
+    if(countHeader>=0){
+      for(let i=countHeader+1;i<Math.min(pvRaw.length,countHeader+10);i++){
+        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=labels.find(x=>r[0].toLowerCase()===x.toLowerCase());
+        if(!lab)continue;out.counts[lab]=n(r.find(v=>/^[-+]?\d+(\.\d+)?$/.test(v))||0);
       }
     }
-    if(!Object.keys(out.counts).length){pv.forEach(r=>{let lab=String(r['Row Labels']||r['Row labels']||'').trim(),val=r['Count of Status'];if(labels.includes(lab)&&String(val)!=='')out.counts[lab]=n(val)})}
+    if(monthHeader>=0){
+      const h=pvRaw[monthHeader].map(v=>String(v||'').trim()),idx=h.map((v,i)=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)?i:-1).filter(i=>i>=0);
+      out.months=idx.map(i=>h[i]);
+      for(let i=monthHeader+1;i<Math.min(pvRaw.length,monthHeader+10);i++){
+        const r=pvRaw[i].map(v=>String(v||'').trim()),lab=labels.find(x=>r[0].toLowerCase()===x.toLowerCase());
+        if(lab)out.matrix[lab]=idx.map(j=>n(r[j]));
+      }
+    }
     if(!Object.keys(out.counts).length){tasks.forEach(t=>{let k=/complete/i.test(t.status)?'Completed':/delay|overdue/i.test(t.status)?'Delayed':/risk/i.test(t.status)?'At Risk':'On Track';out.counts[k]=(out.counts[k]||0)+1})}
     labels.forEach(k=>out.counts[k]=n(out.counts[k]||0));
     out.total=Object.values(out.counts).reduce((a,b)=>a+b,0);
@@ -99,11 +114,16 @@ function exportExecutivePpt(){
   function parseStreamAttention(){
     let rows=[],header=-1;
     for(let i=0;i<needRaw.length;i++){let r=needRaw[i].map(v=>String(v||'').trim());if(r.some(v=>/^Stream$/i.test(v))&&r.some(v=>/DELAYED/i.test(v))){header=i;break}}
-    if(header>=0){let h=needRaw[header].map(v=>String(v||'').trim()),si=h.findIndex(v=>/^Stream$/i.test(v)),ri=h.findIndex(v=>/AT RISK/i.test(v)),di=h.findIndex(v=>/^DELAYED$/i.test(v)),ti=h.findIndex(v=>/Grand Total/i.test(v));for(let i=header+1;i<needRaw.length;i++){let r=needRaw[i].map(v=>String(v||'').trim()),name=r[si];if(!name||/Grand Total/i.test(name))break;rows.push({stream:name,risk:n(r[ri]),delayed:n(r[di]),total:n(r[ti])})}}
+    if(header>=0){let h=needRaw[header].map(v=>String(v||'').trim()),si=h.findIndex(v=>/^Stream$/i.test(v)),ri=h.findIndex(v=>/AT RISK/i.test(v)),di=h.findIndex(v=>/^DELAYED$/i.test(v)),ti=h.findIndex(v=>/Grand Total|Total Result/i.test(v));for(let i=header+1;i<needRaw.length;i++){let r=needRaw[i].map(v=>String(v||'').trim()),name=r[si];if(!name||/Grand Total|Total Result/i.test(name))break;rows.push({stream:name,risk:n(r[ri]),delayed:n(r[di]),total:n(r[ti])})}}
     if(!rows.length){let m={};tasks.forEach(t=>{let k=t.stream||'General';if(!m[k])m[k]={stream:k,risk:0,delayed:0,total:0};m[k].total++;if(/risk/i.test(t.status))m[k].risk++;if(/delay|overdue/i.test(t.status))m[k].delayed++});rows=Object.values(m)}
     return rows.sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk))
   }
-  const health=parsePivot(),streams=parseStreamAttention(),total=health.total||tasks.length,completed=health.counts.Completed,delayed=health.counts.Delayed,risk=health.counts['At Risk'],ontrack=health.counts['On Track'],exception=delayed+risk,pct=x=>total?Math.round(x/total*100):0;
+  function parseTimeline(){
+    const rows=Array.isArray(wi.timeline)?wi.timeline:[],map={};
+    rows.forEach(r=>{const stream=String(r['Workstream']||r['Stream']||'General').trim()||'General',task=String(r['Task']||'').trim(),end=r['Proposed End']||r['Finish Date']||r['Baseline Finish']||r['End Date'];if(!task||!end)return;const dt=new Date(end);if(isNaN(dt))return;if(!map[stream])map[stream]={stream,start:dt,end:dt,total:0,delayed:0,risk:0};let x=map[stream];x.total++;if(dt<x.start)x.start=dt;if(dt>x.end)x.end=dt;const st=String(r['Status']||'');if(/delay|overdue/i.test(st))x.delayed++;if(/risk/i.test(st))x.risk++});
+    return Object.values(map).sort((a,b)=>a.start-b.start)
+  }
+  const health=parsePivot(),streams=parseStreamAttention(),timeline=parseTimeline(),total=health.total||tasks.length,completed=health.counts.Completed,delayed=health.counts.Delayed,risk=health.counts['At Risk'],ontrack=health.counts['On Track'],exception=delayed+risk,pct=x=>total?Math.round(x/total*100):0;
   function topNeed(){return need.filter(r=>String(r['Task Requiring Attention']||r['Task']||'').trim()).sort((a,b)=>/critical/i.test(String(b['Priority']||''))-/critical/i.test(String(a['Priority']||''))).slice(0,10)}
 
   // 1 Cover
@@ -121,6 +141,20 @@ function exportExecutivePpt(){
   // 5 Monthly Delivery Trend
   sl=pptx.addSlide();bg(sl);title(sl,'04. Monthly Delivery Trend','The current pressure point is concentrated in the highest-volume commitment period, followed by a forward workload that must be protected.');let months=health.months.length?health.months:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'],monthly=months.map((mo,i)=>({mo,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i])}));let peak=monthly.reduce((a,b)=>b.total>a.total?b:a,{mo:'N/A',total:0,delayed:0}),forward=monthly.slice(Math.min(monthly.length,months.indexOf(peak.mo)+1)).reduce((a,b)=>a+b.total,0);chip(sl,.85,1.45,2.55,'Peak Volume',peak.total,C.blue,C.paleBlue);chip(sl,3.65,1.45,2.55,peak.mo+' Delay',peak.delayed,C.red,C.paleRed);chip(sl,6.45,1.45,2.55,'Forward Workload',forward,C.amber,C.paleAmber);sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:2.95,w:11.55,h:2.7,rectRadius:.06,fill:{color:C.white},line:{color:C.line}});let mm=Math.max(1,...monthly.map(x=>x.total));monthly.forEach((d,i)=>{let x=1.2+i*1.25,h=1.75*d.total/mm,y=5.1-h;sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h,fill:{color:C.blue},line:{color:C.blue}});let dh=h*(d.delayed/Math.max(1,d.total));if(dh)sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h:dh,fill:{color:C.red},line:{color:C.red}});sl.addText(d.mo,{x:x-.18,y:5.28,w:.98,h:.2,fontSize:7,color:C.muted,align:'center',margin:0});sl.addText(String(d.total),{x,y:y-.23,w:.62,h:.18,fontSize:7,bold:true,color:C.ink,align:'center',margin:0})});sl.addText('Storyline: '+peak.mo+' is the current pressure point. Recover delayed work while protecting the downstream execution pipeline.',{x:.95,y:6.05,w:11.2,h:.3,fontSize:10.5,bold:true,color:C.navy,align:'center',margin:0});
 
+  // 5 Timeline by Stream (MPP)
+  sl=pptx.addSlide();bg(sl);title(sl,'05. Integrated Timeline — MPP by Stream','Forward delivery path by workstream, highlighting the streams carrying the most schedule pressure.');
+  if(!timeline.length){sl.addText('No timeline / MPP data was detected in the uploaded workbook.',{x:.85,y:2,w:8,h:.4,fontSize:12,color:C.muted,margin:0})}
+  else{
+    const shown=timeline.slice(0,10),minDate=new Date(Math.min(...shown.map(x=>x.start))),maxDate=new Date(Math.max(...shown.map(x=>x.end))),span=Math.max(1,maxDate-minDate),chartX=3.25,chartW=8.75;
+    const monthStarts=[];let cur=new Date(minDate.getFullYear(),minDate.getMonth(),1),last=new Date(maxDate.getFullYear(),maxDate.getMonth()+1,1);
+    while(cur<=last&&monthStarts.length<12){monthStarts.push(new Date(cur));cur.setMonth(cur.getMonth()+1)}
+    monthStarts.forEach(d=>{let x=chartX+chartW*((d-minDate)/span);sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.2,y:1.52,w:.6,h:.18,fontSize:7,color:C.muted,align:'center',margin:0});sl.addShape(pptx.ShapeType.line,{x1:x,y1:1.78,x2:x,y2:5.95,line:{color:C.line,width:.5,transparency:35}})});
+    shown.forEach((d,i)=>{let y=2.0+i*.38,x1=chartX+chartW*((d.start-minDate)/span),x2=chartX+chartW*((d.end-minDate)/span),w=Math.max(.22,x2-x1),col=d.delayed?C.red:d.risk?C.amber:C.blue;sl.addText(d.stream,{x:.82,y:y+.03,w:2.2,h:.18,fontSize:7.2,bold:true,color:C.ink,fit:'shrink',margin:0});sl.addShape(pptx.ShapeType.roundRect,{x:x1,y,w,h:.2,rectRadius:.03,fill:{color:col},line:{color:col}});sl.addText(d.total+' act.',{x:12.1,y:y+.02,w:.5,h:.16,fontSize:6.2,color:C.muted,margin:0})});
+    const hot=shown.slice().sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk)).slice(0,3).filter(x=>x.delayed+x.risk>0);
+    sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:6.15,w:11.5,h:.55,rectRadius:.05,fill:{color:C.white},line:{color:C.line}});
+    sl.addText(hot.length?'Timeline focus: '+hot.map(x=>x.stream+' ('+(x.delayed+x.risk)+' exception)').join(' · ')+'. Protect downstream milestones while recovering these streams.':'Timeline focus: protect downstream milestones and validate stream dependencies against the MPP.',{x:1.05,y:6.34,w:11.05,h:.18,fontSize:9.2,bold:true,color:C.navy,fit:'shrink',margin:0});
+  }
+
   // 6 Recommended Recovery Strategy
   sl=pptx.addSlide();bg(sl);title(sl,'05. Recommended Recovery Strategy','Shift from status reporting to active recovery management.');[['1','Contain','Freeze further slippage. Validate delayed items and confirm true feasibility.'],['2','Prioritize','Focus attention on streams with the highest delay concentration and dependency impact.'],['3','Recover','Define corrective action, accountable owner, committed date and measurable output.'],['4','Protect','Protect downstream testing, integration and deployment milestones from inherited delay.']].forEach((z,i)=>{let x=.75+i*3.05;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.65,w:2.72,h:3.2,rectRadius:.07,fill:{color:C.white},line:{color:C.line}});sl.addShape(pptx.ShapeType.ellipse,{x:x+.22,y:1.95,w:.58,h:.58,fill:{color:C.blue},line:{color:C.blue}});sl.addText(z[0],{x:x+.22,y:2.13,w:.58,h:.18,fontSize:10,bold:true,color:C.white,align:'center',margin:0});sl.addText(z[1],{x:x+.25,y:2.85,w:2.05,h:.3,fontSize:15,bold:true,color:C.navy,margin:0});sl.addText(z[2],{x:x+.25,y:3.48,w:2.1,h:.85,fontSize:9,color:C.muted,fit:'shrink',margin:0})});sl.addText('Control principle: a revised date is not a recovery plan unless corrective action, owner, dependency and measurable outcome are explicit.',{x:.85,y:5.55,w:11.4,h:.4,fontSize:11.5,bold:true,color:C.ink,align:'center',margin:0});
 
@@ -128,7 +162,7 @@ function exportExecutivePpt(){
   sl=pptx.addSlide();bg(sl);title(sl,'06. Management Focus & Next Decisions','Immediate management attention required to convert recovery intent into delivery control.');[['Immediate','Validate delayed commitments, recovery owners and credible completion dates.',C.red,C.paleRed],['This Week','Close high-impact dependencies and confirm the next recovery control point.',C.amber,C.paleAmber],['Ongoing','Protect on-track work and prevent at-risk items from converting into delays.',C.blue,C.paleBlue]].forEach((z,i)=>{let x=.85+i*4.05;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.7,w:3.65,h:3.2,rectRadius:.07,fill:{color:z[3]},line:{color:z[3]}});sl.addText(z[0].toUpperCase(),{x:x+.3,y:2.05,w:3.0,h:.25,fontSize:10,bold:true,color:z[2],margin:0});sl.addText(z[1],{x:x+.3,y:2.7,w:2.95,h:1.05,fontSize:13,bold:true,color:C.navy,fit:'shrink',margin:0});sl.addText('Management control', {x:x+.3,y:4.25,w:2.9,h:.2,fontSize:8,color:C.muted,margin:0})});sl.addText('Next control point: validate recovery commitments, dependency readiness and unresolved exceptions before the next executive update.',{x:.9,y:5.95,w:11.3,h:.35,fontSize:11,bold:true,color:C.navy,align:'center',margin:0});
 
   // 8 Need Attention
-  sl=pptx.addSlide();bg(sl);title(sl,'07. Need Attention — PMO Action Summary','Additional executive exception detail sourced from the Need Attention worksheet.');let nr=topNeed();sl.addText('Task',{x:.75,y:1.42,w:4.25,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Attention Type',{x:5.1,y:1.42,w:1.35,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Priority',{x:6.6,y:1.42,w:1.0,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Proposed End',{x:7.8,y:1.42,w:1.15,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('PMO Recommendation',{x:9.1,y:1.42,w:3.0,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});if(!nr.length)sl.addText('No Need Attention detail was detected in the uploaded workbook.',{x:.85,y:2.0,w:8,h:.4,fontSize:12,color:C.muted,margin:0});nr.forEach((r,i)=>{let y=1.78+i*.48,fill=i%2?C.white:'F2F6F9',task=r['Task Requiring Attention']||r['Task']||'',pri=String(r['Priority']||'');sl.addShape(pptx.ShapeType.rect,{x:.7,y,w:11.9,h:.43,fill:{color:fill},line:{color:fill}});sl.addText(String(task),{x:.82,y:y+.08,w:4.1,h:.18,fontSize:7.1,color:C.ink,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Attention Type']||''),{x:5.1,y:y+.08,w:1.35,h:.18,fontSize:6.6,color:C.ink,fit:'shrink',margin:0});sl.addText(pri,{x:6.6,y:y+.08,w:1.0,h:.18,fontSize:6.6,color:/critical/i.test(pri)?C.red:C.amber,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Proposed End']||''),{x:7.8,y:y+.08,w:1.15,h:.18,fontSize:6.6,color:C.ink,fit:'shrink',margin:0});sl.addText(String(r['PMO Recommendation']||''),{x:9.1,y:y+.06,w:3.05,h:.22,fontSize:6.0,color:C.ink,fit:'shrink',margin:0})});sl.addText('Source of truth for executive health: '+(wi.pivotSheet||'Task Pivot')+'  |  Exception detail: '+(wi.needSheet||'Need Attention'),{x:.85,y:6.65,w:11.5,h:.2,fontSize:7.5,color:C.muted,margin:0});
+  sl=pptx.addSlide();bg(sl);title(sl,'08. Need Attention — PMO Action Summary','Additional executive exception detail sourced from the Need Attention worksheet.');let nr=topNeed();sl.addText('Task',{x:.75,y:1.42,w:3.55,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Stream',{x:4.42,y:1.42,w:1.1,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Attention Type',{x:5.62,y:1.42,w:1.25,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Priority',{x:6.95,y:1.42,w:.8,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('Proposed End',{x:7.82,y:1.42,w:1.0,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});sl.addText('PMO Recommendation',{x:8.95,y:1.42,w:3.15,h:.2,fontSize:8,bold:true,color:C.muted,margin:0});if(!nr.length)sl.addText('No Need Attention detail was detected in the uploaded workbook.',{x:.85,y:2.0,w:8,h:.4,fontSize:12,color:C.muted,margin:0});nr.forEach((r,i)=>{let y=1.78+i*.48,fill=i%2?C.white:'F2F6F9',task=r['Task Requiring Attention']||r['Task']||'',pri=String(r['Priority']||'');sl.addShape(pptx.ShapeType.rect,{x:.7,y,w:11.9,h:.43,fill:{color:fill},line:{color:fill}});sl.addText(String(task),{x:.82,y:y+.08,w:3.45,h:.18,fontSize:7.0,color:C.ink,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Stream']||''),{x:4.42,y:y+.08,w:1.1,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(String(r['Attention Type']||''),{x:5.62,y:y+.08,w:1.25,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(pri,{x:6.95,y:y+.08,w:.8,h:.18,fontSize:6.4,color:/critical/i.test(pri)?C.red:C.amber,bold:true,fit:'shrink',margin:0});sl.addText(String(r['Proposed End']||''),{x:7.82,y:y+.08,w:1.0,h:.18,fontSize:6.4,color:C.ink,fit:'shrink',margin:0});sl.addText(String(r['PMO Recommendation']||''),{x:8.95,y:y+.06,w:3.15,h:.22,fontSize:6.0,color:C.ink,fit:'shrink',margin:0})});sl.addText('Source of truth for executive health: '+(wi.pivotSheet||'Task Pivot')+'  |  Exception detail: '+(wi.needSheet||'Need Attention'),{x:.85,y:6.65,w:11.5,h:.2,fontSize:7.5,color:C.muted,margin:0});
   pptx.writeFile({fileName:'ProjectMind_Executive_PMO_Report_'+p.name.replace(/[^a-z0-9]+/gi,'_')+'.pptx'});
 }
 document.getElementById('exportPpt').onclick=exportExecutivePpt;
