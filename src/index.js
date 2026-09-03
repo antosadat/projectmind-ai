@@ -253,7 +253,7 @@ function exportExecutivePpt(){
     risk?'There are '+risk+' at-risk activities that require dependency protection before they convert into delays.':'At-risk exposure is currently limited.',
     topNeed().slice(0,2).map(x=>x['Task Requiring Attention']||x.Task).filter(Boolean).join(' • ')
   ].filter(Boolean);
-  riskLines.forEach((v,i)=>sl.addText((i+1)+'.',{x:5.55,y:4.85+i*.55,w:.25,h:.18,fontSize:9,color:'22272D',margin:0}),sl.addText(v,{x:5.95,y:4.83+i*.55,w:6.0,h:.42,fontSize:9.5,color:'2E353D',fit:'shrink',margin:0}));
+  riskLines.forEach((v,i)=>{sl.addText((i+1)+'.',{x:5.55,y:4.85+i*.55,w:.25,h:.18,fontSize:9,color:'22272D',margin:0});sl.addText(v,{x:5.95,y:4.83+i*.55,w:6.0,h:.42,fontSize:9.5,color:'2E353D',fit:'shrink',margin:0});});
   
   // 2 Executive Snapshot
   sl=pptx.addSlide();bg(sl);title(sl,'Executive Snapshot','The portfolio is progressing, but delivery pressure is concentrated in a small number of streams.');
