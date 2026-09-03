@@ -258,7 +258,7 @@ function exportExecutivePpt(){
   // 2 Executive Snapshot
   sl=pptx.addSlide();bg(sl);title(sl,'Executive Snapshot','The portfolio is progressing, but delivery pressure is concentrated in a small number of streams.');
   [['COMPLETED',completed,pct(completed),C.green],['DELAYED',delayed,pct(delayed),C.red],['ON TRACK',ontrack,pct(ontrack),C.cyan],['AT RISK',risk,pct(risk),C.amber]].forEach((z,i)=>{
-    let x=.75+i*3.18;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.78,w:2.95,h:1.52,rectRadius:.07,fill:{color:'F8F8F7',transparency:100},line:{color:'CBD5DF',width:.6}});sl.addShape(pptx.ShapeType.rect,{x,y,w:.055,h:1.52,fill:{color:z[3]},line:{color:z[3]}});
+    let x=.75+i*3.18;sl.addShape(pptx.ShapeType.roundRect,{x:x,y:1.78,w:2.95,h:1.52,rectRadius:.07,fill:{color:'F8F8F7',transparency:100},line:{color:'CBD5DF',width:.6}});sl.addShape(pptx.ShapeType.rect,{x:x,y:1.78,w:.055,h:1.52,fill:{color:z[3]},line:{color:z[3]}});
     sl.addShape(pptx.ShapeType.rect,{x:x+.18,y:1.98,w:2.58,h:.30,fill:{color:'F8F8F7',transparency:100},line:{color:'4E555D',width:.45}});sl.addText(z[0],{x:x+.28,y:2.08,w:2.25,h:.13,fontSize:7.5,color:'2E343B',margin:0});
     sl.addShape(pptx.ShapeType.rect,{x:x+.18,y:2.38,w:2.58,h:.72,fill:{color:'F8F8F7',transparency:100},line:{color:'4E555D',width:.45}});sl.addText(z[1]+' / '+total+' •\n'+z[2]+'%',{x:x+.3,y:2.55,w:2.1,h:.45,fontSize:18,bold:true,color:'171D24',breakLine:false,margin:0});
   });
