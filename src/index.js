@@ -168,7 +168,7 @@ function exportExecutivePpt(){
       const k=raw.toLowerCase().replace(/[^a-z0-9]/g,'');
       if(aliases[k])return aliases[k];
       for(const name of canonical){const nk=name.toLowerCase().replace(/[^a-z0-9]/g,'');if(k.includes(nk)||nk.includes(k))return name}
-      return raw;
+      return '';
     };
     const map={};
     const add=(stream,task,startV,endV,status,source)=>{
@@ -250,40 +250,71 @@ function exportExecutivePpt(){
   if(months.length)monthly=months.map((mo,i)=>({mo,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i])}));
   if(!monthly.some(x=>x.total>0)){let order=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],mm={};tasks.forEach(t=>{let d=new Date(t.eta);if(isNaN(d))return;let mo=order[d.getMonth()];mm[mo]=mm[mo]||{mo,total:0,delayed:0,risk:0};mm[mo].total++;if(/delay|overdue/i.test(t.status))mm[mo].delayed++;if(/risk/i.test(t.status))mm[mo].risk++;});monthly=Object.values(mm);if(!monthly.length){months=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'];monthly=months.map(mo=>({mo,total:0,delayed:0,risk:0}))}}let peak=monthly.reduce((a,b)=>b.total>a.total?b:a,{mo:'N/A',total:0,delayed:0}),forward=monthly.slice(Math.min(monthly.length,months.indexOf(peak.mo)+1)).reduce((a,b)=>a+b.total,0);chip(sl,.85,1.45,2.55,'Peak Volume',peak.total,C.blue,C.paleBlue);chip(sl,3.65,1.45,2.55,peak.mo+' Delay',peak.delayed,C.red,C.paleRed);chip(sl,6.45,1.45,2.55,'Forward Workload',forward,C.amber,C.paleAmber);sl.addShape(pptx.ShapeType.roundRect,{x:.85,y:2.95,w:11.55,h:2.7,rectRadius:.06,fill:{color:C.white},line:{color:C.line}});let mm=Math.max(1,...monthly.map(x=>x.total));monthly.forEach((d,i)=>{let x=1.2+i*1.25,h=1.75*d.total/mm,y=5.1-h;sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h,fill:{color:C.blue},line:{color:C.blue}});let dh=h*(d.delayed/Math.max(1,d.total));if(dh)sl.addShape(pptx.ShapeType.rect,{x,y,w:.62,h:dh,fill:{color:C.red},line:{color:C.red}});sl.addText(d.mo,{x:x-.18,y:5.28,w:.98,h:.2,fontSize:7,color:C.muted,align:'center',margin:0});sl.addText(String(d.total),{x,y:y-.23,w:.62,h:.18,fontSize:7,bold:true,color:C.ink,align:'center',margin:0})});sl.addText('Storyline: '+peak.mo+' is the current pressure point. Recover delayed work while protecting the downstream execution pipeline.',{x:.95,y:6.05,w:11.2,h:.3,fontSize:10.5,bold:true,color:C.navy,align:'center',margin:0});
 
-  // 5 Integrated Timeline by Stream — MPP
-  sl=pptx.addSlide();bg(sl);title(sl,'05. Integrated Timeline — MPP by Stream','End-to-end delivery path across all detected streams. Red/amber bars indicate schedule pressure; blue bars indicate controlled execution.');
+  // 5 Integrated Timeline by Stream — Executive MPP
+  sl=pptx.addSlide();bg(sl);
+  title(sl,'05. Integrated Timeline — MPP by Stream','Executive delivery view. Each lane represents one workstream; colour and exception signals show where schedule pressure is concentrated.');
+
   const canonicalStreams=['Connectivity Lower','Connectivity Prod','CRP','Data Migration','Deployment','Development','DR','GNG Decission','Go Live','Hypercare','Infra','Performance Test','Requirement Gathering','Security Test','Solution','Training','Production Connectivity','User Training Plan','Requirement Analysis','SIT','UAT','Testing Plan'];
-  let shown=timeline.slice();
-  if(!shown.length){
-    const today=new Date();
-    shown=canonicalStreams.map((stream,i)=>({stream,start:new Date(today.getFullYear(),today.getMonth()+Math.floor(i/3),1),end:new Date(today.getFullYear(),today.getMonth()+Math.floor(i/3)+1,1),total:0,delayed:0,risk:0,tasks:[],source:'Placeholder'}));
-  }
-  const byName=new Map(shown.map(x=>[x.stream,x]));
-  canonicalStreams.forEach(name=>{if(!byName.has(name))shown.push({stream:name,start:null,end:null,total:0,delayed:0,risk:0,tasks:[],source:'Not dated'})});
-  shown.sort((a,b)=>canonicalStreams.indexOf(a.stream)-canonicalStreams.indexOf(b.stream));
-  const dated=shown.filter(x=>x.start&&x.end&&isFinite(+x.start)&&isFinite(+x.end));
-  const minDate=dated.length?new Date(Math.min(...dated.map(x=>+x.start))):new Date(),maxDate=dated.length?new Date(Math.max(...dated.map(x=>+x.end))):new Date(+minDate+30*86400000),span=Math.max(1,+maxDate-+minDate);
-  const chartX=3.15,chartW=9.0,labelW=2.25,topY=1.75,rowH=.205;
-  const monthStarts=[];let cur=new Date(minDate.getFullYear(),minDate.getMonth(),1),last=new Date(maxDate.getFullYear(),maxDate.getMonth()+1,1);
-  while(cur<=last&&monthStarts.length<12){monthStarts.push(new Date(cur));cur.setMonth(cur.getMonth()+1)}
-  sl.addShape(pptx.ShapeType.roundRect,{x:.72,y:1.42,w:11.92,h:4.95,rectRadius:.04,fill:{color:C.white},line:{color:C.line}});
-  monthStarts.forEach(d=>{let x=chartX+chartW*((+d-+minDate)/span);sl.addText(d.toLocaleString('en-US',{month:'short',year:'2-digit'}),{x:x-.28,y:1.5,w:.75,h:.14,fontSize:5.8,color:C.muted,align:'center',margin:0});sl.addShape(pptx.ShapeType.rect,{x,y:1.72,w:.008,h:4.45,fill:{color:C.line,transparency:40},line:{color:C.line,transparency:100}})});
-  shown.slice(0,22).forEach((d,i)=>{
-    let y=topY+i*rowH,hasDate=d.start&&d.end&&isFinite(+d.start)&&isFinite(+d.end);
-    sl.addText(d.stream,{x:.86,y:y+.012,w:labelW,h:.13,fontSize:5.7,bold:true,color:C.ink,fit:'shrink',margin:0});
+  const streamPhase={'Requirement Gathering':'PLAN','Requirement Analysis':'PLAN','Solution':'PLAN','Testing Plan':'PLAN','Development':'BUILD','Infra':'BUILD','Data Migration':'BUILD','Connectivity Lower':'BUILD','Connectivity Prod':'BUILD','Production Connectivity':'BUILD','CRP':'TEST','Performance Test':'TEST','Security Test':'TEST','SIT':'TEST','UAT':'TEST','Training':'READY','User Training Plan':'READY','DR':'READY','Deployment':'RELEASE','GNG Decission':'RELEASE','Go Live':'RELEASE','Hypercare':'RELEASE'};
+  const phaseColor={PLAN:C.blue,BUILD:'4E7DAA',TEST:'7A65B8',READY:C.amber,RELEASE:C.red};
+  const normTL=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const aliasesTL={'connectivitylower':'Connectivity Lower','lowerconnectivity':'Connectivity Lower','connectivityprod':'Connectivity Prod','prodconnectivity':'Connectivity Prod','productionconnectivity':'Production Connectivity','gngdecision':'GNG Decission','gngdecission':'GNG Decission'};
+  const matchStream=v=>{const raw=String(v||'').trim();if(!raw)return'';const n=normTL(raw);if(aliasesTL[n])return aliasesTL[n];for(const name of canonicalStreams){const nn=normTL(name);if(n===nn||n.includes(nn)||nn.includes(n))return name}return''};
+  const grouped=new Map(canonicalStreams.map(name=>[name,{stream:name,start:null,end:null,total:0,delayed:0,risk:0,tasks:[]}]));
+  timeline.forEach(x=>{
+    const candidates=[x.stream,...(Array.isArray(x.tasks)?x.tasks:[])].filter(Boolean);let stream='';
+    for(const c of candidates){stream=matchStream(c);if(stream)break}
+    if(!stream)return;
+    const g=grouped.get(stream),st=x.start instanceof Date&&!isNaN(x.start)?x.start:null,en=x.end instanceof Date&&!isNaN(x.end)?x.end:null;
+    if(st&&(!g.start||st<g.start))g.start=st;if(en&&(!g.end||en>g.end))g.end=en;
+    g.total+=Number(x.total||0);g.delayed+=Number(x.delayed||0);g.risk+=Number(x.risk||0);
+    (x.tasks||[]).forEach(t=>{if(t&&g.tasks.length<3&&!g.tasks.includes(String(t)))g.tasks.push(String(t))});
+  });
+  const lanes=canonicalStreams.map(name=>grouped.get(name));
+  const dated=lanes.filter(x=>x.start&&x.end&&isFinite(+x.start)&&isFinite(+x.end));
+  const minDate=dated.length?new Date(Math.min(...dated.map(x=>+x.start))):new Date();
+  const maxDate=dated.length?new Date(Math.max(...dated.map(x=>+x.end))):new Date(+minDate+30*86400000);
+  const chartStart=new Date(minDate.getFullYear(),minDate.getMonth(),1),chartEnd=new Date(maxDate.getFullYear(),maxDate.getMonth()+1,1),span=Math.max(1,+chartEnd-+chartStart);
+  const mapped=dated.length,unmapped=lanes.length-mapped,pressure=lanes.filter(x=>x.delayed+x.risk>0).length,totalExceptions=lanes.reduce((a,x)=>a+x.delayed+x.risk,0);
+  const horizon=chartStart.toLocaleString('en-US',{month:'short',year:'2-digit'})+' – '+chartEnd.toLocaleString('en-US',{month:'short',year:'2-digit'});
+  [['TIMELINE HORIZON',horizon,C.blue,C.paleBlue],['STREAMS MAPPED',mapped+' / '+lanes.length,C.green,C.paleGreen],['PRESSURE STREAMS',String(pressure),C.red,C.paleRed],['EXCEPTIONS',String(totalExceptions),C.amber,C.paleAmber]].forEach((z,i)=>{let x=.68+i*3.05;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.24,w:2.82,h:.7,rectRadius:.05,fill:{color:z[3]},line:{color:z[3]}});sl.addText(z[0],{x:x+.16,y:1.36,w:2.45,h:.12,fontSize:5.7,bold:true,color:C.muted,margin:0});sl.addText(z[1],{x:x+.16,y:1.55,w:2.45,h:.2,fontSize:10.2,bold:true,color:z[2],fit:'shrink',margin:0})});
+
+  const frameX=.68,frameY=2.08,frameW=11.98,frameH=4.45,labelX=.84,phaseX=2.76,chartX=3.36,chartW=7.85,statusX=11.32,statusW=1.12;
+  sl.addShape(pptx.ShapeType.roundRect,{x:frameX,y:frameY,w:frameW,h:frameH,rectRadius:.045,fill:{color:C.white},line:{color:C.line}});
+  sl.addShape(pptx.ShapeType.rect,{x:frameX,y:frameY,w:frameW,h:.46,fill:{color:'F4F7FA'},line:{color:'F4F7FA'}});
+  sl.addText('WORKSTREAM',{x:labelX,y:frameY+.16,w:1.7,h:.12,fontSize:5.8,bold:true,color:C.muted,margin:0});
+  sl.addText('PHASE',{x:phaseX,y:frameY+.16,w:.42,h:.12,fontSize:5.2,bold:true,color:C.muted,align:'center',margin:0});
+  sl.addText('INTEGRATED DELIVERY TIMELINE',{x:chartX,y:frameY+.16,w:3,h:.12,fontSize:5.8,bold:true,color:C.muted,margin:0});
+  sl.addText('STATUS / PRESSURE',{x:statusX,y:frameY+.16,w:1.05,h:.12,fontSize:5.2,bold:true,color:C.muted,align:'center',margin:0});
+
+  const gridY=frameY+.46,gridH=3.86,rowH=gridH/lanes.length;
+  const months=[];let md=new Date(chartStart);while(md<=chartEnd&&months.length<14){months.push(new Date(md));md.setMonth(md.getMonth()+1)}
+  months.forEach((d,i)=>{let x=chartX+chartW*((+d-+chartStart)/span);if(i<months.length-1)sl.addShape(pptx.ShapeType.rect,{x,y:gridY,w:.008,h:gridH,fill:{color:'DCE5EE'},line:{color:'DCE5EE'}});sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.18,y:frameY+.16,w:.55,h:.12,fontSize:5.5,bold:true,color:C.muted,align:'center',margin:0})});
+
+  lanes.forEach((d,i)=>{
+    let y=gridY+i*rowH;if(i%2===1)sl.addShape(pptx.ShapeType.rect,{x:frameX+.01,y,w:frameW-.02,h:rowH,fill:{color:'FAFBFC'},line:{color:'FAFBFC'}});
+    sl.addShape(pptx.ShapeType.rect,{x:frameX+.01,y:y+rowH-.006,w:frameW-.02,h:.006,fill:{color:'E8EEF3'},line:{color:'E8EEF3'}});
+    const ph=streamPhase[d.stream]||'CONTROL';
+    sl.addShape(pptx.ShapeType.roundRect,{x:phaseX+.03,y:y+rowH*.23,w:.36,h:rowH*.54,rectRadius:.03,fill:{color:phaseColor[ph]||C.blue},line:{color:phaseColor[ph]||C.blue}});
+    sl.addText(d.stream,{x:labelX,y:y+rowH*.24,w:1.82,h:rowH*.42,fontSize:6.25,bold:true,color:C.ink,fit:'shrink',margin:0});
+    const hasDate=d.start&&d.end&&isFinite(+d.start)&&isFinite(+d.end);
     if(hasDate){
-      let x1=chartX+chartW*((+d.start-+minDate)/span),x2=chartX+chartW*((+d.end-+minDate)/span),w=Math.max(.11,x2-x1),col=d.delayed?C.red:d.risk?C.amber:C.blue;
-      sl.addShape(pptx.ShapeType.roundRect,{x:x1,y:y+.015,w,h:.12,rectRadius:.02,fill:{color:col},line:{color:col}});
-      if((d.delayed+d.risk)>0)sl.addText((d.delayed+d.risk)+' ex.',{x:12.25,y:y+.015,w:.32,h:.1,fontSize:4.8,bold:true,color:col,margin:0});
+      let x1=chartX+chartW*Math.max(0,Math.min(1,(+d.start-+chartStart)/span)),x2=chartX+chartW*Math.max(0,Math.min(1,(+d.end-+chartStart)/span)),barW=Math.max(.08,x2-x1),exceptions=d.delayed+d.risk,col=d.delayed?C.red:d.risk?C.amber:C.blue;
+      sl.addShape(pptx.ShapeType.roundRect,{x:x1,y:y+rowH*.22,w:barW,h:rowH*.56,rectRadius:.025,fill:{color:col},line:{color:col}});
+      sl.addShape(pptx.ShapeType.ellipse,{x:x1+barW-.055,y:y+rowH*.18,w:.075,h:rowH*.64,fill:{color:C.white,transparency:12},line:{color:C.white,transparency:25}});
+      sl.addText(exceptions>0?exceptions+' ex.':'CONTROLLED',{x:statusX,y:y+rowH*.22,w:statusW,h:rowH*.45,fontSize:exceptions>0?5.5:4.8,bold:true,color:exceptions>0?col:C.blue,align:'center',margin:0});
     }else{
-      sl.addText('Date not mapped',{x:chartX,y:y+.01,w:1.0,h:.12,fontSize:5.2,color:C.muted,margin:0});
+      sl.addText('DATE GAP',{x:chartX+.08,y:y+rowH*.25,w:.62,h:rowH*.4,fontSize:5.1,bold:true,color:C.muted,margin:0});
+      sl.addText('MAP MPP',{x:statusX,y:y+rowH*.22,w:statusW,h:rowH*.45,fontSize:4.8,bold:true,color:C.muted,align:'center',margin:0});
     }
   });
-  const hot=shown.filter(x=>x.delayed+x.risk>0).sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk)).slice(0,3);
-  const undated=shown.filter(x=>!x.start||!x.end).length;
-  sl.addShape(pptx.ShapeType.roundRect,{x:.72,y:6.52,w:11.92,h:.36,rectRadius:.04,fill:{color:C.paleBlue},line:{color:C.line}});
-  const focus=hot.length?'Pressure focus: '+hot.map(x=>x.stream+' ('+(x.delayed+x.risk)+' exception)').join(' · ')+'. Protect SIT/UAT, deployment and go-live dependencies while recovery is executed.':'Timeline focus: protect downstream testing, deployment and go-live milestones through dependency-based control.';
-  sl.addText(focus+(undated?'  '+undated+' stream(s) require MPP date mapping.':''),{x:.92,y:6.63,w:11.35,h:.12,fontSize:6.7,bold:true,color:C.navy,fit:'shrink',margin:0});
+
+  const todayMarker=new Date();if(+todayMarker>=+chartStart&&+todayMarker<=+chartEnd){let tx=chartX+chartW*((+todayMarker-+chartStart)/span);sl.addShape(pptx.ShapeType.rect,{x:tx,y:gridY-.02,w:.012,h:gridH+.04,fill:{color:'5D7F5D'},line:{color:'5D7F5D'}});sl.addText('TODAY',{x:tx-.19,y:frameY+.04,w:.4,h:.1,fontSize:4.7,bold:true,color:'5D7F5D',align:'center',margin:0})}
+
+  const hot=lanes.filter(x=>x.delayed+x.risk>0).sort((a,b)=>(b.delayed+b.risk)-(a.delayed+a.risk)).slice(0,3);
+  const focus=hot.length?'Management focus: '+hot.map(x=>x.stream+' ('+(x.delayed+x.risk)+' exception)').join(' · ')+'. Prioritise recovery of these streams while protecting downstream SIT, UAT, deployment and go-live dependencies.':'Management focus: no stream-level exception concentration was detected. Protect downstream testing, deployment and go-live commitments through dependency-based control.';
+  sl.addShape(pptx.ShapeType.roundRect,{x:.68,y:6.67,w:11.98,h:.42,rectRadius:.04,fill:{color:'EEF4F8'},line:{color:'D7E3EC'}});
+  sl.addText(focus+(unmapped?'  '+unmapped+' stream(s) still require MPP date mapping.':''),{x:.9,y:6.81,w:11.5,h:.13,fontSize:6.1,bold:true,color:C.navy,fit:'shrink',margin:0});
 
   // 6 Recommended Recovery Strategy
   sl=pptx.addSlide();bg(sl);title(sl,'06. Recommended Recovery Strategy','Shift from status reporting to active recovery management.');[['1','Contain','Freeze further slippage. Validate delayed items and confirm true feasibility.'],['2','Prioritize','Focus attention on streams with the highest delay concentration and dependency impact.'],['3','Recover','Define corrective action, accountable owner, committed date and measurable output.'],['4','Protect','Protect downstream testing, integration and deployment milestones from inherited delay.']].forEach((z,i)=>{let x=.75+i*3.05;sl.addShape(pptx.ShapeType.roundRect,{x,y:1.65,w:2.72,h:3.2,rectRadius:.07,fill:{color:C.white},line:{color:C.line}});sl.addShape(pptx.ShapeType.ellipse,{x:x+.22,y:1.95,w:.58,h:.58,fill:{color:C.blue},line:{color:C.blue}});sl.addText(z[0],{x:x+.22,y:2.13,w:.58,h:.18,fontSize:10,bold:true,color:C.white,align:'center',margin:0});sl.addText(z[1],{x:x+.25,y:2.85,w:2.05,h:.3,fontSize:15,bold:true,color:C.navy,margin:0});sl.addText(z[2],{x:x+.25,y:3.48,w:2.1,h:.85,fontSize:9,color:C.muted,fit:'shrink',margin:0})});sl.addText('Control principle: a revised date is not a recovery plan unless corrective action, owner, dependency and measurable outcome are explicit.',{x:.85,y:5.55,w:11.4,h:.4,fontSize:11.5,bold:true,color:C.ink,align:'center',margin:0});
