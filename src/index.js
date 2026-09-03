@@ -288,8 +288,8 @@ function exportExecutivePpt(){
   sl.addText('STATUS / PRESSURE',{x:statusX,y:frameY+.16,w:1.05,h:.12,fontSize:5.2,bold:true,color:C.muted,align:'center',margin:0});
 
   const gridY=frameY+.46,gridH=3.86,rowH=gridH/lanes.length;
-  const months=[];let md=new Date(chartStart);while(md<=chartEnd&&months.length<14){months.push(new Date(md));md.setMonth(md.getMonth()+1)}
-  months.forEach((d,i)=>{let x=chartX+chartW*((+d-+chartStart)/span);if(i<months.length-1)sl.addShape(pptx.ShapeType.rect,{x,y:gridY,w:.008,h:gridH,fill:{color:'DCE5EE'},line:{color:'DCE5EE'}});sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.18,y:frameY+.16,w:.55,h:.12,fontSize:5.5,bold:true,color:C.muted,align:'center',margin:0})});
+  const timelineMonths=[];let md=new Date(chartStart);while(md<=chartEnd&&timelineMonths.length<14){timelineMonths.push(new Date(md));md.setMonth(md.getMonth()+1)}
+  timelineMonths.forEach((d,i)=>{let x=chartX+chartW*((+d-+chartStart)/span);if(i<timelineMonths.length-1)sl.addShape(pptx.ShapeType.rect,{x,y:gridY,w:.008,h:gridH,fill:{color:'DCE5EE'},line:{color:'DCE5EE'}});sl.addText(d.toLocaleString('en-US',{month:'short'}),{x:x-.18,y:frameY+.16,w:.55,h:.12,fontSize:5.5,bold:true,color:C.muted,align:'center',margin:0})});
 
   lanes.forEach((d,i)=>{
     let y=gridY+i*rowH;if(i%2===1)sl.addShape(pptx.ShapeType.rect,{x:frameX+.01,y,w:frameW-.02,h:rowH,fill:{color:'FAFBFC'},line:{color:'FAFBFC'}});
