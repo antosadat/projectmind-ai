@@ -173,11 +173,11 @@ function exportExecutivePpt(){
       return out;
     }
     const fallback=[
-      ['Work Completed',pct(completed)+'%'],
-      ['Work In Progress',(100-pct(completed))+'%'],
-      ['At Risk',pct(risk)+'%'],
-      ['Delayed',pct(delayed)+'%'],
-      ['On Track',pct(ontrack)+'%']
+      ['Work Completed',total?Math.round(completed/total*100)+'%':'0%'],
+      ['Work In Progress',total?Math.round((total-completed)/total*100)+'%':'0%'],
+      ['At Risk',total?Math.round(risk/total*100)+'%':'0%'],
+      ['Delayed',total?Math.round(delayed/total*100)+'%':'0%'],
+      ['On Track',total?Math.round(ontrack/total*100)+'%':'0%']
     ];
     return {rows:fallback,health:delayed?'Delayed':risk?'At Risk':'On Track',rag:delayed?'Red':risk?'Amber':'Green'};
   }
@@ -289,13 +289,13 @@ function exportExecutivePpt(){
   const ragColor=/^1(\.0+)?$/i.test(ragText)||/red|delay/i.test(ragText)?'D8663B':/amber|risk|yellow/i.test(ragText)?'F5B332':'7EAE56';
   sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:tableH,fill:{color:'F8F8F7',transparency:100},line:{color:'444A51',width:.6}});
   sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:.24,fill:{color:'FFF200'},line:{color:'444A51',width:.45}});
-  [tableX+phaseW,tableX+phaseW+pctW,tableX+phaseW+pctW+healthW].forEach(x=>sl.addShape(pptx.ShapeType.line,{x1:x,y1:tableY,x2:x,y2:tableY+tableH,line:{color:'444A51',width:.45}}));
+  [tableX+phaseW,tableX+phaseW+pctW,tableX+phaseW+pctW+healthW].forEach(x=>sl.addShape(pptx.ShapeType.rect,{x,y:tableY,w:.006,h:tableH,fill:{color:'444A51'},line:{color:'444A51',width:.1}}));
   sl.addText('Phase',{x:tableX+.02,y:tableY+.06,w:phaseW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
   sl.addText('% Complete',{x:tableX+phaseW+.02,y:tableY+.06,w:pctW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
   sl.addText('Health',{x:tableX+phaseW+pctW+.02,y:tableY+.06,w:healthW-.04,h:.12,fontSize:10,bold:false,align:'center',margin:0});
   sl.addText('RAG',{x:tableX+phaseW+pctW+healthW+.02,y:tableY+.06,w:ragW-.04,h:.12,fontSize:10,bold:true,align:'center',margin:0});
   const rowH=(tableH-.24)/5;
-  phaseRows.forEach((r,i)=>{let y=tableY+.24+i*rowH;if(i>0)sl.addShape(pptx.ShapeType.line,{x1:tableX,y1:y,x2:tableX+phaseW+pctW,y2:y,line:{color:'444A51',width:.45}});sl.addText(r[0],{x:tableX+.06,y:y+.055,w:phaseW-.12,h:.13,fontSize:9.5,bold:i<2,color:'22272D',align:'center',margin:0});sl.addText(r[1],{x:tableX+phaseW+.04,y:y+.055,w:pctW-.08,h:.13,fontSize:9.5,color:'22272D',align:'center',margin:0})});
+  phaseRows.forEach((r,i)=>{let y=tableY+.24+i*rowH;if(i>0)sl.addShape(pptx.ShapeType.rect,{x:tableX,y,w:phaseW+pctW,h:.006,fill:{color:'444A51'},line:{color:'444A51',width:.1}});sl.addText(r[0],{x:tableX+.06,y:y+.055,w:phaseW-.12,h:.13,fontSize:9.5,bold:i<2,color:'22272D',align:'center',margin:0});sl.addText(r[1],{x:tableX+phaseW+.04,y:y+.055,w:pctW-.08,h:.13,fontSize:9.5,color:'22272D',align:'center',margin:0})});
   sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW,y:tableY+.24,w:healthW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
   sl.addText(healthText,{x:tableX+phaseW+pctW+.05,y:tableY+1.02,w:healthW-.1,h:.24,fontSize:11,bold:true,color:'20252B',align:'center',margin:0});
   sl.addShape(pptx.ShapeType.rect,{x:tableX+phaseW+pctW+healthW,y:tableY+.24,w:ragW,h:tableH-.24,fill:{color:healthColor},line:{color:'444A51',width:.45}});
