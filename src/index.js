@@ -217,15 +217,33 @@ function exportExecutivePpt(){
 document.getElementById('exportPpt').onclick=exportExecutivePpt;
 document.getElementById('askAI').onclick=async()=>{let q=document.getElementById('question').value||'Provide a concise PMO recovery assessment and escalation priorities.',ans=document.getElementById('aiAnswer');ans.value='Analysing project data...';try{let r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,tasks:project().tasks,changes:changes()})}),d=await r.json();ans.value=d.report||'No analysis returned.';document.getElementById('mode').textContent=d.mode==='ai'?'● AI Advisor Connected':'● Local Intelligence Active'}catch(e){ans.value='Unable to reach the analysis service. Local PMO workflow remains available.'}};
 const chatHistory=[];
+let pendingAgentActions=[];
 function addChat(role,text){const el=document.createElement('div');el.className='msg '+role;el.textContent=text;document.getElementById('chatMsgs').appendChild(el);el.scrollIntoView({block:'end'});}
-function projectChatContext(){const p=project();return {project:p.name,tasks:p.tasks,changes:changes(),needAttention:(p.tasks||[]).filter(t=>/delay|overdue|risk|blocked/i.test(String(t.status||''))).slice(0,25)}}
+function projectChatContext(){const p=project();return {project:p.name,tasks:p.tasks,changes:changes(),needAttention:(p.tasks||[]).filter(t=>/delay|overdue|risk|blocked/i.test(String(t.status||''))).slice(0,25),capabilities:['analyse_health','prioritise_actions','create_recovery_plan','draft_escalation','update_task_status','update_task_priority','create_need_attention']}}
+function applyAgentActions(actions){
+  if(!Array.isArray(actions)||!actions.length)return '';
+  let p=project(),changed=[];
+  actions.forEach(a=>{if(!a||!a.type)return;
+    if(a.type==='update_task'){
+      let t=(p.tasks||[]).find(x=>String(x.task).toLowerCase()===String(a.task||'').toLowerCase());
+      if(t){['status','priority','pic','eta','action','dependency','impact','issue'].forEach(k=>{if(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=='')t[k]=String(a[k])});changed.push('updated '+t.task)}
+    }
+    if(a.type==='create_need_attention'){
+      let name=String(a.task||'').trim();if(name&&!p.tasks.some(t=>String(t.task).toLowerCase()===name.toLowerCase())){p.tasks.push({task:name,status:a.status||'At Risk',stream:a.stream||'General',pic:a.pic||'TBC',eta:a.eta||'TBC',priority:a.priority||'High',dependency:a.dependency||'',action:a.action||'',impact:a.impact||'',issue:a.issue||''});changed.push('created '+name)}
+    }
+  });
+  if(changed.length){save();render();return changed.join(', ')}return '';
+}
 async function sendAgentMessage(forced){
   const input=document.getElementById('chatInput'),message=(forced||input.value).trim();if(!message)return;
   input.value='';addChat('user',message);chatHistory.push({role:'user',content:message});
   const thinking='ProjectMind Agent is analysing...';addChat('agent',thinking);const msgs=document.getElementById('chatMsgs');
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,history:chatHistory.slice(-12),context:projectChatContext()})});
-    const d=await r.json();msgs.lastChild.remove();addChat('agent',d.reply||d.report||'I could not generate a response.');chatHistory.push({role:'assistant',content:d.reply||d.report||''});document.getElementById('mode').textContent=d.mode==='ai'?'● AI Agent Connected':'● Local Intelligence Active';
+    const d=await r.json();msgs.lastChild.remove();addChat('agent',d.reply||d.report||'I could not generate a response.');
+    pendingAgentActions=Array.isArray(d.actions)?d.actions:[];
+    if(pendingAgentActions.length){const b=document.createElement('button');b.className='btn primary';b.textContent='Apply '+pendingAgentActions.length+' proposed action(s)';b.style.margin='0 14px 10px';b.onclick=()=>{const summary=applyAgentActions(pendingAgentActions);pendingAgentActions=[];b.remove();addChat('agent',summary?'Actions applied: '+summary:'No action was applied.');};msgs.appendChild(b)}
+    chatHistory.push({role:'assistant',content:d.reply||d.report||''});document.getElementById('mode').textContent=d.mode==='ai'?'● AI Agent Connected':'● Local Intelligence Active';
   }catch(e){msgs.lastChild.remove();addChat('agent','Connection to the AI Agent is unavailable. Please try again.');}
 }
 document.getElementById('chatFab').onclick=()=>{document.getElementById('chatbox').classList.add('open');if(!chatHistory.length)addChat('agent','Hi, I am your ProjectMind Agent. Ask me anything about your project in Bahasa Indonesia or English. I can analyse delays, risks, priorities, recovery actions and management escalation based on the dashboard data.')};
@@ -242,11 +260,12 @@ export default {async fetch(request,env){const url=new URL(request.url);if(url.p
   const local='I can help with that. Current dashboard context contains '+((context.tasks||[]).length)+' tracked task(s). For a full data-grounded analysis, connect an AI provider through OPENAI_API_KEY.';
   if(!env.OPENAI_API_KEY)return Response.json({reply:local,mode:'local'});
   try{
-    const system='You are ProjectMind Agent, a senior global PMO, transformation and delivery advisor embedded in ProjectMind AI. Understand natural language in any wording, especially Indonesian and English. Answer conversationally but precisely. Use supplied dashboard context as the source of truth for project-specific facts. You may discuss general PMO knowledge, but clearly distinguish recommendations from actual project facts. Do not invent project data. When useful, structure the answer into Current Assessment, Key Risks, Recommended Actions, and Escalation. Keep responses practical and management-ready.';
+    const system='You are ProjectMind Agent, a senior global PMO, transformation and delivery advisor embedded in ProjectMind AI. Understand natural language in any wording, especially Indonesian and English. Use supplied dashboard context as the source of truth for project-specific facts and never invent project data. You can recommend or propose actions. Return STRICT JSON only with this schema: {"reply":"concise conversational answer","actions":[{"type":"update_task","task":"exact task name","status":"","priority":"","pic":"","eta":"","action":"","dependency":"","impact":"","issue":""},{"type":"create_need_attention","task":"","stream":"","status":"At Risk","priority":"High","pic":"","eta":"","action":"","dependency":"","impact":"","issue":""}]}. Actions are OPTIONAL and must only be proposed when the user explicitly asks to change/create/update something or clearly requests execution. Never claim an action has been applied; the UI requires user confirmation.';
     const messages=[{role:'system',content:system},{role:'system',content:'CURRENT PROJECT CONTEXT:\n'+JSON.stringify(context)},...history.filter(x=>x&&x.content).map(x=>({role:x.role==='assistant'?'assistant':'user',content:String(x.content)}))];
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-4.1-mini',messages,temperature:.3})});
-    const data=await res.json(),reply=data.choices?.[0]?.message?.content;
-    return res.ok&&reply?Response.json({reply,mode:'ai'}):Response.json({reply:local,mode:'local'});
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-4.1-mini',messages,temperature:.2,response_format:{type:'json_object'}})});
+    const data=await res.json(),raw=data.choices?.[0]?.message?.content;
+    let parsed;try{parsed=JSON.parse(raw)}catch(e){parsed={reply:raw||local,actions:[]}}
+    return res.ok&&parsed.reply?Response.json({reply:parsed.reply,actions:Array.isArray(parsed.actions)?parsed.actions:[],mode:'ai'}):Response.json({reply:local,actions:[],mode:'local'});
   }catch(e){return Response.json({reply:local,mode:'local'})}
 }
 if(url.pathname==='/api/analyze'&&request.method==='POST'){const body=await request.json(),tasks=Array.isArray(body.tasks)?body.tasks:[],changes=Array.isArray(body.changes)?body.changes:[],question=String(body.question||'Provide PMO analysis'),local=fallbackReport(tasks,changes,question);if(!env.OPENAI_API_KEY)return Response.json({report:local,mode:'local'});try{const model=env.OPENAI_MODEL||'gpt-4.1-mini',prompt='Question: '+question+'\n\nTracker:\n'+JSON.stringify(tasks)+'\n\nChanges:\n'+JSON.stringify(changes),res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:'You are a senior global PMO and recovery manager. Give concise, decision-oriented analysis grounded only in supplied tracker data. Do not invent facts.'},{role:'user',content:prompt}],temperature:.2})}),data=await res.json();return res.ok?Response.json({report:data.choices?.[0]?.message?.content||local,mode:'ai'}):Response.json({report:local,mode:'local'})}catch(e){return Response.json({report:local,mode:'local'})}}return new Response(html,{headers:{'content-type':'text/html;charset=UTF-8','cache-control':'no-store'}})}};
