@@ -1,4 +1,4 @@
-const html = String.raw\`<!doctype html>
+const html = String.raw`<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ProjectMind AI V3 · PMO Operating System</title>
@@ -93,7 +93,7 @@ document.getElementById('snapshotBtn').onclick=snapshotNow;document.getElementBy
 document.getElementById('analyseBtn').onclick=async()=>{if(!tasks.length)return;const b=document.getElementById('analyseBtn');b.disabled=true;b.textContent='Analysing...';report.textContent='ProjectMind is preparing the recovery analysis...';try{const res=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tasks:recovery.slice(0,120),changes:changes.slice(0,80)})});const j=await res.json();report.textContent=j.report||localReport()}catch(e){report.textContent=localReport()}finally{b.disabled=false;b.textContent='Generate AI Recovery Plan'}}
 document.getElementById('exportBtn').onclick=()=>{const h=['Task','Status','PIC/Owner','Commit Date','Change','Impact Analysis','Next Action','Dependency'];const cmap=new Map(changes.filter(x=>x.current).map(x=>[x.current.key,x]));const lines=[h,...(recovery.length?recovery:tasks).map(t=>[t.task,t.status,t.owner,t.commitDate,cmap.get(t.key)?.detail||'',t.impact,t.action,t.dependency])].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines],{type:'text/csv'}));a.download='ProjectMind_V3_Recovery_and_Changes.csv';a.click();URL.revokeObjectURL(a.href)}
 fetch('/api/health').then(r=>r.json()).then(j=>{brain.textContent=j.aiConfigured?'● AI Brain Online · V3':'● Dashboard Online · Local intelligence active';brain.style.color=j.aiConfigured?'var(--green)':'var(--amber)'}).catch(()=>{brain.textContent='● Connection unavailable';brain.style.color='var(--red)'});
-</script></body></html>\`;
+</script></body></html>`;
 
 const jsonHeaders={"content-type":"application/json; charset=UTF-8"};
 function cleanTask(t){return {task:String(t.task||''),status:String(t.status||''),owner:String(t.owner||'TBC'),commitDate:String(t.commitDate||'TBC'),stream:String(t.stream||''),dependency:String(t.dependency||'')}}
@@ -101,16 +101,16 @@ function cleanChange(c){return {type:String(c.type||''),task:String(c.task||''),
 function fallbackReport(tasks,changes=[]){
  const overdue=tasks.filter(t=>/delay|overdue|late|blocked/i.test(t.status));
  const deteriorated=changes.filter(c=>c.type==="escalate");
- return \`PMO RECOVERY SUMMARY
+ return `PMO RECOVERY SUMMARY
 
-Current position: \${overdue.length} of \${tasks.length} analysed task(s) are flagged as delayed/overdue. \${changes.length} reporting-cycle change(s) were detected, including \${deteriorated.length} deterioration(s).
+Current position: ${overdue.length} of ${tasks.length} analysed task(s) are flagged as delayed/overdue. ${changes.length} reporting-cycle change(s) were detected, including ${deteriorated.length} deterioration(s).
 
 Required next actions:
 1. Confirm root cause, corrective action and accountable PIC for each delayed task.
 2. Validate cross-stream dependencies and blockers before committing the revised date.
 3. Replace any TBC ETA with a realistic commitment approved by the responsible owner.
 4. Escalate repeated missed commitments where the next milestone, test cycle or solution document is impacted.
-5. Track whether the recovery plan is actually improving the position by comparing the next snapshot against the current baseline.\`;
+5. Track whether the recovery plan is actually improving the position by comparing the next snapshot against the current baseline.`;
 }
 export default {
  async fetch(request, env){
