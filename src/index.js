@@ -110,14 +110,16 @@ function exportExecutivePpt(){
   function chip(sl,x,y,w,label,value,color,pale){sl.addShape(pptx.ShapeType.roundRect,{x,y,w,h:1.45,rectRadius:.08,fill:{color:'F8F8F7',transparency:100},line:{color:'CBD5DF',width:.6}});sl.addShape(pptx.ShapeType.rect,{x,y,w:.055,h:1.45,fill:{color},line:{color}});sl.addShape(pptx.ShapeType.rect,{x:x+.22,y:y+.2,w:w-.42,h:.30,fill:{color:'F8F8F7',transparency:100},line:{color:'4F555C',width:.45}});sl.addText(String(label).toUpperCase(),{x:x+.32,y:y+.30,w:w-.62,h:.12,fontSize:7.2,color:'303840',margin:0});sl.addShape(pptx.ShapeType.rect,{x:x+.22,y:y+.58,w:w-.42,h:.68,fill:{color:'F8F8F7',transparency:100},line:{color:'4F555C',width:.45}});sl.addText(String(value),{x:x+.32,y:y+.79,w:w-.62,h:.30,fontSize:20,bold:true,color:'171D24',margin:0})}
   function parsePivot(){
     const labels=['At Risk','Completed','Delayed','On Track'],out={counts:{},months:[],matrix:{}};
-    let countHeader=-1,monthHeader=-1;
+    const monthOrder=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthToken=v=>{const q=String(v||'').trim();const m=q.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:[a-z]*|[\s'’._-]*\d{2,4})?\b/i);return m?monthOrder.find(x=>x.toLowerCase()===m[1].toLowerCase())||'':''};
+    let countHeader=-1,monthHeader=-1,monthHeaderCount=0;
     for(let i=0;i<pvRaw.length;i++){
       const r=pvRaw[i].map(v=>String(v||'').trim());
       const hasCount=r.some(v=>/^Count of Status$/i.test(v));
-      const hasLabel=r.some(v=>/^Row Labels$/i.test(v));
-      if(countHeader<0&&hasCount&&(hasLabel||r.some(v=>/^Status$/i.test(v))))countHeader=i;
-      const monthCount=r.filter(v=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)).length;
-      if(monthHeader<0&&monthCount>=2&&(hasLabel||r.some(v=>/^Status$/i.test(v))))monthHeader=i;
+      const hasLabel=r.some(v=>/^Row Labels$/i.test(v)||/^Status$/i.test(v));
+      if(countHeader<0&&hasCount&&hasLabel)countHeader=i;
+      const monthCount=new Set(r.map(monthToken).filter(Boolean)).size;
+      if(hasLabel&&monthCount>=2&&monthCount>monthHeaderCount){monthHeader=i;monthHeaderCount=monthCount}
     }
     const readLabelRow=(r)=>labels.find(x=>r.some(v=>String(v||'').trim().toLowerCase()===x.toLowerCase()));
     if(countHeader>=0){
@@ -130,11 +132,12 @@ function exportExecutivePpt(){
     }
     if(monthHeader>=0){
       const h=pvRaw[monthHeader].map(v=>String(v||'').trim());
-      const idx=h.map((v,i)=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i.test(v)?i:-1).filter(i=>i>=0);
-      out.months=idx.map(i=>h[i]);
-      for(let i=monthHeader+1;i<Math.min(pvRaw.length,monthHeader+30);i++){
+      const seenMonth=new Set(),idx=[];
+      h.forEach((v,i)=>{const mo=monthToken(v);if(mo&&!seenMonth.has(mo)){seenMonth.add(mo);idx.push({i,mo})}});
+      out.months=idx.map(x=>x.mo);
+      for(let i=monthHeader+1;i<Math.min(pvRaw.length,monthHeader+40);i++){
         const r=pvRaw[i].map(v=>String(v||'').trim()),lab=readLabelRow(r);
-        if(lab)out.matrix[lab]=idx.map(j=>n(r[j]));
+        if(lab)out.matrix[lab]=idx.map(x=>n(r[x.i]));
       }
     }
     if(!Object.keys(out.counts).length){tasks.forEach(t=>{let k=/complete/i.test(t.status)?'Completed':/delay|overdue/i.test(t.status)?'Delayed':/risk/i.test(t.status)?'At Risk':'On Track';out.counts[k]=(out.counts[k]||0)+1})}
@@ -284,9 +287,12 @@ function exportExecutivePpt(){
   const phaseRows=taskPivotHealth.rows;
   const tableX=.75,tableY=4.42,tableW=4.55,tableH=2.22,phaseW=1.92,pctW=.92,healthW=1.28,ragW=.43;
   const healthText=taskPivotHealth.health||'';
-  const healthColor=/delay|red/i.test(healthText)?'E4C0BC':/risk|amber/i.test(healthText)?'F7E1A7':'CDE5D5';
+  // RAG colour is governed by Health, not by the raw numeric RAG cell.
+  // Defined mapping: Completed = Green, On Track = Blue, At Risk = Amber, Delayed = Red.
+  const healthKey=String(healthText||'').trim().toLowerCase();
+  const healthColor=/delay/i.test(healthKey)?'E4C0BC':/at\s*risk|risk/i.test(healthKey)?'F7E1A7':/complete/i.test(healthKey)?'CDE5D5':'D9EAF5';
   const ragText=String(taskPivotHealth.rag||'');
-  const ragColor=/^1(\.0+)?$/i.test(ragText)||/red|delay/i.test(ragText)?'D8663B':/amber|risk|yellow/i.test(ragText)?'F5B332':'7EAE56';
+  const ragColor=/delay/i.test(healthKey)?C.red:/at\s*risk|risk/i.test(healthKey)?C.amber:/complete/i.test(healthKey)?C.green:C.blue;
   sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:tableH,fill:{color:'F8F8F7',transparency:100},line:{color:'444A51',width:.6}});
   sl.addShape(pptx.ShapeType.rect,{x:tableX,y:tableY,w:tableW,h:.24,fill:{color:'FFF200'},line:{color:'444A51',width:.45}});
   [tableX+phaseW,tableX+phaseW+pctW,tableX+phaseW+pctW+healthW].forEach(x=>sl.addShape(pptx.ShapeType.rect,{x,y:tableY,w:.006,h:tableH,fill:{color:'444A51'},line:{color:'444A51',width:.1}}));
@@ -349,9 +355,27 @@ function exportExecutivePpt(){
 
   // 5 Monthly Delivery Trend
   sl=pptx.addSlide();bg(sl);title(sl,'Monthly Delivery Trend','The current pressure point is concentrated in the highest-volume month, followed by a forward workload that must be protected.');
-  let months=health.months.length?health.months:[],monthly=[];
-  if(months.length)monthly=months.map((mo,i)=>({mo,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),completed:n((health.matrix.Completed||[])[i]),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i]),ontrack:n((health.matrix['On Track']||[])[i])}));
-  if(!monthly.some(x=>x.total>0)){const order=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],mm={};tasks.forEach(t=>{let d=new Date(t.eta);if(isNaN(d))return;let mo=order[d.getMonth()];mm[mo]=mm[mo]||{mo,total:0,completed:0,delayed:0,risk:0,ontrack:0};mm[mo].total++;if(/complete/i.test(t.status))mm[mo].completed++;else if(/delay|overdue/i.test(t.status))mm[mo].delayed++;else if(/risk/i.test(t.status))mm[mo].risk++;else mm[mo].ontrack++;});monthly=Object.values(mm)}
+  const monthOrderAll=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthIndex=mo=>monthOrderAll.indexOf(mo);
+  const monthMap={};
+  (health.months||[]).forEach((mo,i)=>{
+    const m=String(mo||'').slice(0,3).replace(/^./,c=>c.toUpperCase()).toLowerCase();
+    const canonical=monthOrderAll.find(x=>x.toLowerCase()===m);
+    if(!canonical)return;
+    const d={mo:canonical,total:['Completed','Delayed','At Risk','On Track'].reduce((a,k)=>a+n((health.matrix[k]||[])[i]),0),completed:n((health.matrix.Completed||[])[i]),delayed:n((health.matrix.Delayed||[])[i]),risk:n((health.matrix['At Risk']||[])[i]),ontrack:n((health.matrix['On Track']||[])[i])};
+    if(d.total>0)monthMap[canonical]=d;
+  });
+  // Build a complete monthly fallback from the tracker, then use it to fill any months that were not parsed from Task Pivot.
+  const taskMonthMap={};
+  tasks.forEach(t=>{let d=new Date(t.eta);if(isNaN(d))return;let mo=monthOrderAll[d.getMonth()];if(!taskMonthMap[mo])taskMonthMap[mo]={mo,total:0,completed:0,delayed:0,risk:0,ontrack:0};let x=taskMonthMap[mo];x.total++;if(/complete/i.test(t.status))x.completed++;else if(/delay|overdue/i.test(t.status))x.delayed++;else if(/risk/i.test(t.status))x.risk++;else x.ontrack++});
+  Object.keys(taskMonthMap).forEach(mo=>{if(!monthMap[mo])monthMap[mo]=taskMonthMap[mo]});
+  let presentMonths=Object.keys(monthMap).sort((a,b)=>monthIndex(a)-monthIndex(b));
+  if(presentMonths.length>=2){
+    const from=monthIndex(presentMonths[0]),to=monthIndex(presentMonths[presentMonths.length-1]);
+    for(let i=from;i<=to;i++){const mo=monthOrderAll[i];if(!monthMap[mo])monthMap[mo]={mo,total:0,completed:0,delayed:0,risk:0,ontrack:0}}
+  }
+  let monthly=Object.values(monthMap).sort((a,b)=>monthIndex(a.mo)-monthIndex(b.mo));
+  if(!monthly.length)monthly=monthOrderAll.map(mo=>({mo,total:0,completed:0,delayed:0,risk:0,ontrack:0}));
   let peak=monthly.reduce((a,b)=>b.total>a.total?b:a,{mo:'N/A',total:0,delayed:0,risk:0,ontrack:0,completed:0}),peakIndex=Math.max(0,monthly.findIndex(x=>x.mo===peak.mo)),forward=monthly.slice(peakIndex+1).reduce((a,b)=>a+b.total,0),mmax=Math.max(1,...monthly.map(x=>x.total));
   sl.addShape(pptx.ShapeType.rect,{x:1.55,y:1.88,w:7.25,h:4.5,fill:{color:'F8F8F7',transparency:100},line:{color:'D6DEE6',width:.5}});
   monthly.forEach((d,i)=>{let x=1.9+i*(6.5/Math.max(1,monthly.length));let base=6.05,hh=3.45*d.total/mmax;let cur=base;[['completed',C.green],['delayed','FF2D2D'],['risk',C.amber],['ontrack',C.cyan]].forEach(z=>{let h=hh*(d[z[0]]/Math.max(1,d.total));if(h){cur-=h;sl.addShape(pptx.ShapeType.rect,{x,y:cur,w:.36,h,fill:{color:z[1]},line:{color:z[1]}})}});sl.addText(d.mo,{x:x-.2,y:6.18,w:.8,h:.18,fontSize:9,color:'43505B',align:'center',margin:0})});
