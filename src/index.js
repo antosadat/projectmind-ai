@@ -414,14 +414,14 @@ function exportExecutivePpt(){
     ['ON TRACK',actual.ontrack,C.cyan]
   ];
   actualCards.forEach((z,i)=>{const col=i%2,row=Math.floor(i/2),x=9.0+col*1.82,y=1.9+row*1.15;sl.addShape(pptx.ShapeType.roundRect,{x,y,w:1.62,h:.94,rectRadius:.05,fill:{color:'F8F8F7',transparency:100},line:{color:'CBD5DF',width:.55}});sl.addShape(pptx.ShapeType.rect,{x,y,w:.055,h:.94,fill:{color:z[2]},line:{color:z[2]}});sl.addText(z[0],{x:x+.16,y:y+.18,w:1.28,h:.11,fontSize:6.2,bold:true,color:'4A545E',align:'center',margin:0});sl.addText(String(z[1]),{x:x+.16,y:y+.46,w:1.28,h:.2,fontSize:15,bold:true,color:'22272D',align:'center',margin:0})});
-  const exception=n(actual.delayed)+n(actual.risk),active=n(actual.ontrack)+n(actual.completed);
+  const actualException=n(actual.delayed)+n(actual.risk),actualActive=n(actual.ontrack)+n(actual.completed);
   const actualStory=actual.total
     ? actual.mo+' actual month: '+actual.completed+' completed, '+actual.delayed+' delayed, '+actual.risk+' at risk, and '+actual.ontrack+' on track.'
     : actual.mo+' is the current reporting month, but no activity volume is available in the source.';
   const focusText=actual.total
-    ? (exception>0
-      ? 'Focus: recover '+exception+' exception item'+(exception===1?'':'s')+' in '+actual.mo+' before they affect downstream commitments; protect '+active+' completed/on-track item'+(active===1?'':'s')+'.'
-      : 'Focus: no exception is recorded for '+actual.mo+'. Protect the '+active+' completed/on-track item'+(active===1?'':'s')+' and maintain delivery discipline.')
+    ? (actualException>0
+      ? 'Focus: recover '+actualException+' exception item'+(actualException===1?'':'s')+' in '+actual.mo+' before they affect downstream commitments; protect '+actualActive+' completed/on-track item'+(actualActive===1?'':'s')+'.'
+      : 'Focus: no exception is recorded for '+actual.mo+'. Protect the '+actualActive+' completed/on-track item'+(actualActive===1?'':'s')+' and maintain delivery discipline.')
     : 'Focus: validate current-month activity mapping before drawing an executive conclusion.';
   sl.addShape(pptx.ShapeType.rect,{x:9.0,y:4.42,w:3.47,h:.42,fill:{color:'F8F8F7',transparency:100},line:{color:'4E555D',width:.45}});
   sl.addText(actualTitle+' ANALYSIS',{x:9.16,y:4.56,w:3.1,h:.13,fontSize:8.6,bold:true,color:'252B31',margin:0});
