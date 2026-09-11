@@ -18,8 +18,7 @@ export const kpiOverlay = String.raw`
     if(/delay|delayed|overdue|late|blocked/.test(s)) return 'delayed';
     if(/risk|at[ -]?risk/.test(s)) return 'risk';
     if(/progress|in[ -]?progress|ongoing|wip|working|execution|development/.test(s)) return 'progress';
-    if(/on[ -]?track|ontrack/.test(s)) return 'progress';
-    return 'progress';
+    return 'other';
   };
   const getTasks=()=>{try{return typeof project==='function'?(project().tasks||[]):[]}catch(e){return[]}};
   const pct=(n,total)=>total?((n/total)*100).toFixed(1)+'%':'0.0%';
@@ -27,10 +26,8 @@ export const kpiOverlay = String.raw`
     const el=document.getElementById('kpis'); if(!el) return;
     const ts=getTasks(), total=ts.length;
     const c={completed:0,delayed:0,risk:0,progress:0};
-    ts.forEach(t=>c[statusOf(t)]++);
-    const items=[
-      ['total',total],['delayed',c.delayed],['risk',c.risk],['completed',c.completed],['progress',c.progress]
-    ];
+    ts.forEach(t=>{const s=statusOf(t);if(s in c)c[s]++;});
+    const items=[['total',total],['delayed',c.delayed],['risk',c.risk],['completed',c.completed],['progress',c.progress]];
     el.classList.add('pm-kpi-grid');
     el.innerHTML=items.map(([key,n])=>{
       const cls=COLORS[key];
