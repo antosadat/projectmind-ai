@@ -7,6 +7,6 @@
     "check": "wrangler deploy --dry-run"
   },
   "devDependencies": {
-    "wrangler": "4.13.1"
+    "wrangler": "4.131.1"
   }
 }
