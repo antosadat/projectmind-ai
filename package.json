@@ -1,0 +1,12 @@
+{
+  "name": "projectmind-ai",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.13.1"
+  }
+}
