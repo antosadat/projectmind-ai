@@ -1,26 +1,27 @@
 export const delayedDashboard = String.raw`
 <style id="pi-delayed-dashboard-style">
-#piDelayedDash{margin-top:18px;background:#f7f8fa;border:1px solid #d8dee7;border-radius:16px;padding:24px;color:#273142;box-shadow:0 8px 24px rgba(15,23,42,.08)}
+#piDelayedDash{margin-top:14px;background:#0d1a2b;border:1px solid #1f4568;border-radius:16px;padding:24px;color:#eef5fc;box-shadow:0 10px 30px rgba(0,0,0,.22)}
 #piDelayedDash .pi-dd-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.95fr);gap:28px;align-items:stretch}
-#piDelayedDash .pi-dd-title{font-size:22px;font-weight:800;margin:0 0 22px;color:#202733}
+#piDelayedDash .pi-dd-title{font-size:22px;font-weight:800;margin:0 0 22px;color:#eef5fc}
 #piDelayedDash .pi-dd-chart{min-width:0}
-#piDelayedDash .pi-dd-row{display:grid;grid-template-columns:125px 1fr 38px;gap:10px;align-items:center;margin:16px 0;cursor:pointer}
-#piDelayedDash .pi-dd-label{text-align:right;font-size:13px;color:#4b5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#piDelayedDash .pi-dd-bar{height:31px;background:#e8ebef;border-radius:2px;overflow:hidden}
-#piDelayedDash .pi-dd-bar i{display:block;height:100%;background:#ff2f2f;transition:width .2s ease}
-#piDelayedDash .pi-dd-value{font-size:14px;font-weight:600;color:#374151}
-#piDelayedDash .pi-dd-row:hover .pi-dd-label{font-weight:700;color:#111827}
-#piDelayedDash .pi-dd-row:hover .pi-dd-bar i{background:#e52335}
-#piDelayedDash .pi-dd-side{display:flex;flex-direction:column;gap:22px}
-#piDelayedDash .pi-dd-box{background:#fff;border:1px solid #cbd3dd;border-radius:8px;padding:12px 20px;position:relative}
-#piDelayedDash .pi-dd-box:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#d9485f;border-radius:8px 0 0 8px}
-#piDelayedDash .pi-dd-kicker{font-size:10px;font-weight:700;letter-spacing:.02em;color:#5b6470;border:1px solid #aeb7c2;padding:8px 12px;margin-bottom:12px}
-#piDelayedDash .pi-dd-number{font-size:24px;font-weight:800;color:#1f2937;border:1px solid #aeb7c2;padding:18px 14px}
-#piDelayedDash .pi-dd-number span{font-weight:500;font-size:17px}
-#piDelayedDash .pi-dd-imp{background:#fff;border:1px solid #aeb7c2;padding:18px 16px;color:#4b5563;line-height:1.55;font-size:13px;min-height:92px}
-#piDelayedDash .pi-dd-imp-title{font-size:14px;font-weight:800;color:#374151;border:1px solid #aeb7c2;padding:12px;margin-bottom:8px;background:#fff}
-#piDelayedDash .pi-dd-empty{padding:55px 20px;text-align:center;color:#6b7280}
-#piDelayedDash .pi-dd-hint{font-size:11px;color:#6b7280;margin-top:12px}
+#piDelayedDash .pi-dd-row{display:grid;grid-template-columns:145px 1fr 42px;gap:10px;align-items:center;margin:16px 0;cursor:pointer}
+#piDelayedDash .pi-dd-label{text-align:right;font-size:13px;color:#b9c9da;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#piDelayedDash .pi-dd-bar{height:31px;background:#12243a;border:1px solid #1e3a56;border-radius:4px;overflow:hidden}
+#piDelayedDash .pi-dd-bar i{display:block;height:100%;background:#ff6b80;transition:width .2s ease}
+#piDelayedDash .pi-dd-value{font-size:14px;font-weight:700;color:#eef5fc}
+#piDelayedDash .pi-dd-row:hover .pi-dd-label{font-weight:700;color:#fff}
+#piDelayedDash .pi-dd-row:hover .pi-dd-bar{border-color:#5791ff}
+#piDelayedDash .pi-dd-row:hover .pi-dd-bar i{background:#ff7d90}
+#piDelayedDash .pi-dd-side{display:flex;flex-direction:column;gap:16px}
+#piDelayedDash .pi-dd-box{background:#102039;border:1px solid #294866;border-radius:10px;padding:12px 18px;position:relative;cursor:pointer}
+#piDelayedDash .pi-dd-box:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#ff6b80;border-radius:10px 0 0 10px}
+#piDelayedDash .pi-dd-kicker{font-size:10px;font-weight:700;letter-spacing:.06em;color:#91a4ba;margin-bottom:9px}
+#piDelayedDash .pi-dd-number{font-size:23px;font-weight:800;color:#eef5fc}
+#piDelayedDash .pi-dd-number span{font-weight:500;font-size:15px;color:#9db0c4}
+#piDelayedDash .pi-dd-imp{background:#102039;border:1px solid #294866;border-radius:10px;padding:16px;color:#b9c9da;line-height:1.55;font-size:13px;min-height:68px}
+#piDelayedDash .pi-dd-imp-title{font-size:13px;font-weight:800;color:#eef5fc;margin-bottom:8px}
+#piDelayedDash .pi-dd-empty{padding:55px 20px;text-align:center;color:#91a4ba}
+#piDelayedDash .pi-dd-hint{font-size:11px;color:#7f93a8;margin-top:12px}
 #piDelayedDetail{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:20px;z-index:2200}
 #piDelayedDetail.open{display:flex}
 #piDelayedDetail .pi-dd-modal{width:min(1120px,96vw);max-height:88vh;overflow:auto;background:#0d1a2b;border:1px solid #355678;border-radius:18px;padding:18px;color:#eef5fc;box-shadow:0 30px 90px rgba(0,0,0,.55)}
@@ -40,7 +41,7 @@ export const delayedDashboard = String.raw`
     <aside class="pi-dd-side">
       <div id="piDelayedTop1"></div>
       <div id="piDelayedTop2"></div>
-      <div class="pi-dd-box" style="padding:0;border:none;background:transparent">
+      <div style="padding-top:2px">
         <div class="pi-dd-imp-title">Management implication</div>
         <div class="pi-dd-imp" id="piDelayedImplication"></div>
       </div>
@@ -52,7 +53,7 @@ export const delayedDashboard = String.raw`
 (function(){
   'use strict';
   function tasks(){try{if(typeof project!=='function')return[];var p=project()||{};return Array.isArray(p.tasks)?p.tasks:[]}catch(e){return[]}}
-  function delayed(t){return /delay|overdue|late|blocked/i.test(String(t&&t.status||''))}
+  function statusOf(t){var s=String(t&&t.status||'');if(/complete|done|closed/i.test(s))return 'Completed';if(/delay|overdue|late|blocked/i.test(s))return 'Delayed';if(/risk/i.test(s))return 'At Risk';return 'On Track'}
   function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})}
   function streamName(t){return String(t&&t.stream||'General').trim()||'General'}
   function openDetail(name,items){
@@ -63,18 +64,17 @@ export const delayedDashboard = String.raw`
     if(!items.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#91a4ba">No delayed task data.</div>'}
     else{
       var h='<table><thead><tr><th>Task</th><th>PIC</th><th>ETA</th><th>Priority</th><th>Status</th><th>Dependency / Blocker</th><th>PMO Action</th></tr></thead><tbody>';
-      items.forEach(function(t){h+='<tr><td><b>'+esc(t.task||t.activity||'—')+'</b></td><td>'+esc(t.pic||t.owner||'—')+'</td><td>'+esc(t.eta||t.proposedEnd||t.baselineFinish||'—')+'</td><td>'+esc(t.priority||'—')+'</td><td>'+esc(t.status||'Delayed')+'</td><td>'+esc(t.dependency||t.blocker||'—')+'</td><td>'+esc(t.action||t.nextAction||'—')+'</td></tr>'});
+      items.forEach(function(t){h+='<tr><td><b>'+esc(t.task||t.activity||'—')+'</b></td><td>'+esc(t.pic||t.owner||'—')+'</td><td>'+esc(t.eta||t.proposedEnd||t.baselineFinish||'—')+'</td><td>'+esc(t.priority||'—')+'</td><td>'+esc(statusOf(t))+'</td><td>'+esc(t.dependency||t.blocker||'—')+'</td><td>'+esc(t.action||t.nextAction||'—')+'</td></tr>'});
       body.innerHTML=h+'</tbody></table>';
     }
     modal.classList.add('open');
   }
-  function box(el,x){el.innerHTML='<div class="pi-dd-box"><div class="pi-dd-kicker">'+esc(x.s.toUpperCase())+' STREAM</div><div class="pi-dd-number">'+x.d+' <span>delayed / '+x.total+' total</span></div></div>';el.firstElementChild.onclick=function(){openDetail(x.s,x.items)}}
+  function box(el,x){if(!el)return;el.innerHTML='<div class="pi-dd-box"><div class="pi-dd-kicker">'+esc(x.s.toUpperCase())+' STREAM</div><div class="pi-dd-number">'+x.d+' <span>delayed / '+x.total+' total</span></div></div>';el.firstElementChild.onclick=function(){openDetail(x.s,x.items)}}
   function render(){
     var all=tasks(),m={};
-    all.forEach(function(t){var s=streamName(t);if(!m[s])m[s]={s:s,total:0,d:0,items:[]};m[s].total++;if(delayed(t)){m[s].d++;m[s].items.push(t)}});
+    all.forEach(function(t){var s=streamName(t);if(!m[s])m[s]={s:s,total:0,d:0,items:[]};m[s].total++;if(statusOf(t)==='Delayed'){m[s].d++;m[s].items.push(t)}});
     var rows=Object.keys(m).map(function(k){return m[k]}).filter(function(x){return x.d>0}).sort(function(a,b){return b.d-a.d||b.total-a.total}).slice(0,6);
-    var container=document.getElementById('piDelayedRows');
-    if(!container)return;
+    var container=document.getElementById('piDelayedRows');if(!container)return;
     if(!rows.length){container.innerHTML='<div class="pi-dd-empty">No delayed stream data available.</div>';return}
     var max=Math.max(1,rows[0].d);
     container.innerHTML=rows.map(function(x){return '<div class="pi-dd-row" data-stream="'+esc(x.s)+'"><span class="pi-dd-label">'+esc(x.s)+'</span><span class="pi-dd-bar"><i style="width:'+Math.max(4,x.d/max*100)+'%"></i></span><span class="pi-dd-value">'+x.d+'</span></div>'}).join('');
