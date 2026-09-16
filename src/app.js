@@ -7,7 +7,9 @@ const BRAND='Project Intelligence';
 const BG_SOURCE='https://raw.githubusercontent.com/antosadat/projectmind-ai/e0331c81301564fe9c9d417e1b7af5603e5d514d/assets/project-intelligence-bg.webp';
 const BACKGROUND_STYLE=String.raw`<style id="pi-background-style">
 html,body{background-color:#071321!important}
-body{background-image:linear-gradient(rgba(7,19,33,.82),rgba(7,19,33,.88)),url('/__project-intelligence-bg.webp?v=1');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
+body{background-image:linear-gradient(rgba(7,19,33,.64),rgba(7,19,33,.70)),url('/__project-intelligence-bg.webp?v=2');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
+body::before{content:"";position:fixed;inset:0;background:url('/__project-intelligence-bg.webp?v=2') center top/cover no-repeat;opacity:.13;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1}
 </style>`;
 
 export default {
