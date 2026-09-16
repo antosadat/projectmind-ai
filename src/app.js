@@ -4,15 +4,23 @@ import { delayedDashboard } from './delayed-dashboard.js';
 
 const OLD='ProjectMind AI';
 const BRAND='Project Intelligence';
+const BG_SOURCE='https://raw.githubusercontent.com/antosadat/projectmind-ai/e0331c81301564fe9c9d417e1b7af5603e5d514d/assets/project-intelligence-bg.webp';
 const BACKGROUND_STYLE=String.raw`<style id="pi-background-style">
 html,body{background-color:#071321!important}
-body{background-image:linear-gradient(rgba(7,19,33,.82),rgba(7,19,33,.88)),url('https://raw.githubusercontent.com/antosadat/projectmind-ai/main/assets/project-intelligence-bg.webp');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
+body{background-image:linear-gradient(rgba(7,19,33,.82),rgba(7,19,33,.88)),url('/__project-intelligence-bg.webp?v=1');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
 </style>`;
 
 export default {
   async fetch(request, env, ctx) {
-    const response = await base.fetch(request, env, ctx);
     const url = new URL(request.url);
+    if (url.pathname === '/__project-intelligence-bg.webp') {
+      const img = await fetch(BG_SOURCE, { cf: { cacheEverything: true, cacheTtl: 86400 } });
+      const headers = new Headers(img.headers);
+      headers.set('cache-control', 'public, max-age=86400, immutable');
+      headers.set('content-type', 'image/webp');
+      return new Response(img.body, { status: img.status, headers });
+    }
+    const response = await base.fetch(request, env, ctx);
     const ct = response.headers.get('content-type') || '';
     if (url.pathname === '/' && ct.includes('text/html')) {
       const text = await response.text();
