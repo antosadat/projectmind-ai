@@ -90,7 +90,7 @@ const agenticScript = String.raw`(() => {
     el.innerHTML='<div class="panel" style="padding:14px"><div class="row"><h3 class="grow">🧠 Agentic Workbook Intelligence</h3><span class="badge">'+wi.worksheetCount+' worksheets analysed</span></div><div class="mini muted" style="margin-bottom:8px">'+esc(wi.fileName)+' · Cross-worksheet analysis active</div><div style="margin-bottom:10px">'+counts+'</div><div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Worksheet</th><th>Detected Role</th><th>Rows</th><th>Status Signals</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }
   function activateAgenticWorkbook() {
-    if(!window.importBook)return;
+    if(typeof importBook==='undefined'||!importBook)return;
     const wi=buildWorkbookIntelligence();
     if(!wi)return;
     const allTasks=workbookTasksAll();
