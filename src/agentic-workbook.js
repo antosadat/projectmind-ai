@@ -167,7 +167,7 @@ const agenticScript = String.raw`(() => {
       const st=Object.entries(s.statusCounts).map(([k,v])=>k+' '+v).join(' · ');
       return '<tr><td>'+esc(s.name)+'</td><td>'+esc(s.type)+'</td><td>'+s.rows+'</td><td>'+esc(st||'—')+'</td></tr>';
     }).join('');
-    el.innerHTML='<div class="panel" style="padding:14px"><div class="row"><h3 class="grow">🧠 Agentic Workbook Intelligence</h3><span class="badge">'+wi.worksheetCount+' worksheets analysed</span></div><div class="mini muted" style="margin-bottom:8px">'+esc(wi.fileName)+' · Cross-worksheet analysis active</div><div style="margin-bottom:10px">'+counts+'</div><div class="mini muted" style="margin-bottom:10px">Cross-sheet graph: '+(wi.impactSummary?.nodeCount||0)+' nodes · '+(wi.impactSummary?.edgeCount||0)+' links · '+(wi.impactSummary?.impactedChains||0)+' impact chain(s)</div><div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Worksheet</th><th>Detected Role</th><th>Rows</th><th>Status Signals</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    el.innerHTML='<div class="panel" style="padding:14px"><div class="row"><h3 class="grow">🧠 Agentic Workbook Intelligence</h3><span class="badge">'+wi.worksheetCount+' worksheets analysed</span></div><div class="mini muted" style="margin-bottom:8px">'+esc(wi.fileName)+' · Default mode: all worksheets are analysed automatically</div><div style="margin-bottom:10px">'+counts+'</div><div class="mini muted" style="margin-bottom:10px">Cross-sheet graph: '+(wi.impactSummary?.nodeCount||0)+' nodes · '+(wi.impactSummary?.edgeCount||0)+' links · '+(wi.impactSummary?.impactedChains||0)+' impact chain(s)</div><div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Worksheet</th><th>Detected Role</th><th>Rows</th><th>Status Signals</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }
   function activateAgenticWorkbook() {
     if(typeof importBook==='undefined'||!importBook)return;
@@ -175,14 +175,15 @@ const agenticScript = String.raw`(() => {
     if(!wi)return;
     const allTasks=workbookTasksAll();
     const p=project();
+    p.workbookAnalysisMode='all-worksheets-by-default';
     p.workbook=wi;
     p.tasks=allTasks.length?allTasks:p.tasks;
     p.workbookTaskCount=allTasks.length;
     save(); renderWorkbookPanel(wi); render();
-    document.getElementById('mapping').textContent='Workbook '+wi.fileName+' analysed across all '+wi.worksheetCount+' worksheets. '+allTasks.length+' task-like records consolidated for Project Intelligence.';
+    document.getElementById('mapping').textContent='Default analysis: all '+wi.worksheetCount+' worksheets analysed automatically. '+allTasks.length+' task-like records consolidated for Project Intelligence.';
     const control=document.getElementById('sheetControl');
     if(control&&!document.getElementById('agenticAllBtn')){
-      const b=document.createElement('button');b.id='agenticAllBtn';b.className='btn good';b.textContent='✓ All Worksheets Analysed';b.disabled=true;control.appendChild(b);
+      const b=document.createElement('button');b.id='agenticAllBtn';b.className='btn good';b.textContent='✓ Auto: All Worksheets Analysed';b.disabled=true;control.appendChild(b);
     }
   }
   const originalFileHandler=document.getElementById('file')?.onchange;
@@ -212,6 +213,7 @@ const agenticScript = String.raw`(() => {
     }catch(e){ans.value='Unable to reach the analysis service. Local PMO workflow remains available.'}
   };
   const status=document.getElementById('mode');
-  if(status&&importBook)status.textContent='● Agentic Workbook Intelligence Active';
+  if(status&&importBook)status.textContent='● Agentic Workbook Intelligence · All Worksheets Active';
+  window.__projectMindAgenticAllWorksheetsByDefault=true;
 })();`;
 export default agenticScript;
