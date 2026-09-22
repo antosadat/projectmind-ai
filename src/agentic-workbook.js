@@ -61,6 +61,10 @@ const agenticScript = String.raw`(() => {
       projectCoverage:sheets.reduce((m,s)=>(m[s.type]=(m[s.type]||0)+1,m),{}),
       contextText:allText
     };
+    const graph=buildImpactGraph(out);
+    out.impactGraph=graph;
+    out.impactSummary=impactSummary(graph);
+    return out;
   }
   function workbookTasksAll() {
     if(!importBook)return [];
@@ -163,7 +167,7 @@ const agenticScript = String.raw`(() => {
       const st=Object.entries(s.statusCounts).map(([k,v])=>k+' '+v).join(' · ');
       return '<tr><td>'+esc(s.name)+'</td><td>'+esc(s.type)+'</td><td>'+s.rows+'</td><td>'+esc(st||'—')+'</td></tr>';
     }).join('');
-    el.innerHTML='<div class="panel" style="padding:14px"><div class="row"><h3 class="grow">🧠 Agentic Workbook Intelligence</h3><span class="badge">'+wi.worksheetCount+' worksheets analysed</span></div><div class="mini muted" style="margin-bottom:8px">'+esc(wi.fileName)+' · Cross-worksheet analysis active</div><div style="margin-bottom:10px">'+counts+'</div><div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Worksheet</th><th>Detected Role</th><th>Rows</th><th>Status Signals</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    el.innerHTML='<div class="panel" style="padding:14px"><div class="row"><h3 class="grow">🧠 Agentic Workbook Intelligence</h3><span class="badge">'+wi.worksheetCount+' worksheets analysed</span></div><div class="mini muted" style="margin-bottom:8px">'+esc(wi.fileName)+' · Cross-worksheet analysis active</div><div style="margin-bottom:10px">'+counts+'</div><div class="mini muted" style="margin-bottom:10px">Cross-sheet graph: '+(wi.impactSummary?.nodeCount||0)+' nodes · '+(wi.impactSummary?.edgeCount||0)+' links · '+(wi.impactSummary?.impactedChains||0)+' impact chain(s)</div><div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Worksheet</th><th>Detected Role</th><th>Rows</th><th>Status Signals</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }
   function activateAgenticWorkbook() {
     if(typeof importBook==='undefined'||!importBook)return;
@@ -191,7 +195,7 @@ const agenticScript = String.raw`(() => {
     window.projectChatContext=function(){
       const c=originalContext();
       const wi=project()?.workbook;
-      if(wi)c.workbookIntelligence={fileName:wi.fileName,worksheetCount:wi.worksheetCount,sheets:wi.sheets,exceptionSheets:wi.exceptionSheets,projectCoverage:wi.projectCoverage,taskCount:project()?.workbookTaskCount||project()?.tasks?.length||0};
+      if(wi)c.workbookIntelligence={fileName:wi.fileName,worksheetCount:wi.worksheetCount,sheets:wi.sheets,exceptionSheets:wi.exceptionSheets,projectCoverage:wi.projectCoverage,taskCount:project()?.workbookTaskCount||project()?.tasks?.length||0,impactSummary:wi.impactSummary,impactGraph:wi.impactGraph};
       return c;
     };
   }
@@ -201,7 +205,9 @@ const agenticScript = String.raw`(() => {
     const ans=document.getElementById('aiAnswer');ans.value='Analysing all worksheets...';
     try{
       const c=projectChatContext();
-      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:[],context:c})});
+      const impact= c.workbookIntelligence?.impactSummary;
+      const prompt=impact ? q+'\n\nWorkbook impact context: '+JSON.stringify(impact) : q;
+      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt,history:[],context:c})});
       const d=await r.json();ans.value=d.reply||d.report||'No analysis returned.';
     }catch(e){ans.value='Unable to reach the analysis service. Local PMO workflow remains available.'}
   };
