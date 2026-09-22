@@ -74,6 +74,82 @@ const agenticScript = String.raw`(() => {
     const seen=new Set();
     return out.filter(t=>{const k=norm(t.task)+'|'+norm(t.stream)+'|'+norm(t.pic);if(seen.has(k))return false;seen.add(k);return true});
   }
+  function buildImpactGraph(wi) {
+    if(!importBook) return {nodes:[],edges:[],impacts:[]};
+    const nodes=[], edges=[], byKey=new Map(), byName=new Map();
+    const cleanKey=v=>String(v??'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const addNode=(sheet,task,status,row)=> {
+      const name=String(task||'').trim();
+      if(!name) return null;
+      const key=cleanKey(name);
+      if(!key) return null;
+      const id=sheet+'::'+row+'::'+key;
+      const node={id,key,name,sheet,status:status||'Unknown',row};
+      nodes.push(node);
+      if(!byKey.has(key))byKey.set(key,[]);
+      byKey.get(key).push(node);
+      const short=key.replace(/\\b(the|a|an)\\b/g,'').trim();
+      if(short){if(!byName.has(short))byName.set(short,[]);byName.get(short).push(node)}
+      return node;
+    };
+    importBook.SheetNames.forEach(sheet=>{
+      const raw=XLSX.utils.sheet_to_json(importBook.Sheets[sheet],{header:1,defval:'',raw:false,blankrows:false});
+      let hi=-1,score=-1;
+      for(let i=0;i<Math.min(raw.length,25);i++){
+        const h=raw[i].map(v=>String(v||''));
+        let s=0; if(h.some(v=>headerWords.task.test(v)))s++; if(h.some(v=>headerWords.status.test(v)))s++; if(h.some(v=>headerWords.owner.test(v)))s++; if(h.some(v=>headerWords.risk.test(v)))s++;
+        if(s>score){score=s;hi=i}
+      }
+      if(hi<0)return;
+      const headers=raw[hi].map((v,i)=>String(v||'').trim()||('Column '+(i+1)));
+      const findCol=rx=>headers.findIndex(h=>rx.test(h));
+      const ti=findCol(headerWords.task), si=findCol(headerWords.status), di=findCol(/dependency|blocker|prerequisite|upstream|preparation/i);
+      if(ti<0)return;
+      raw.slice(hi+1).forEach((r,idx)=>{
+        const task=String(r[ti]||'').trim(); if(!task)return;
+        const status=si>=0?String(r[si]||'').trim():'';
+        const node=addNode(sheet,task,status,hi+idx+2); if(!node)return;
+        if(di>=0){
+          const dep=String(r[di]||'').trim();
+          if(dep) node.dependency=dep;
+        }
+      });
+    });
+    const unique=(a,b,type,reason)=>{if(a&&b&&a.id!==b.id&&!edges.some(e=>e.from===a.id&&e.to===b.id&&e.type===type))edges.push({from:a.id,to:b.id,type,reason})};
+    byKey.forEach(group=>{
+      if(group.length>1) for(let i=1;i<group.length;i++) unique(group[0],group[i],'same_entity','Same normalized task across worksheets');
+    });
+    nodes.forEach(n=>{
+      const dep=cleanKey(n.dependency||'');
+      if(!dep)return;
+      byKey.forEach((group,key)=>{ if(key && (dep.includes(key)||key.includes(dep))) group.forEach(target=>unique(n,target,'depends_on','Dependency text match')); });
+    });
+    const outgoing=new Map();
+    edges.forEach(e=>{if(e.type!=='depends_on')return;if(!outgoing.has(e.to))outgoing.set(e.to,[]);outgoing.get(e.to).push(e.from)});
+    const impacted=[];
+    nodes.filter(n=>/delayed|overdue|at risk|risk|blocked/i.test(n.status)).forEach(source=>{
+      const seen=new Set([source.id]),queue=[source.id],downstream=[];
+      while(queue.length){
+        const cur=queue.shift();
+        (outgoing.get(cur)||[]).forEach(id=>{
+          if(seen.has(id))return;seen.add(id);const hit=nodes.find(n=>n.id===id);if(hit){downstream.push(hit);queue.push(id)}
+        });
+      }
+      if(downstream.length) impacted.push({source:{sheet:source.sheet,name:source.name,status:source.status},downstream:downstream.slice(0,20).map(n=>({sheet:n.sheet,name:n.name,status:n.status}))});
+    });
+    return {nodes:nodes.slice(0,2000),edges:edges.slice(0,4000),impacts:impacted.slice(0,100)};
+  }
+  function impactSummary(graph){
+    const cross=[...new Set((graph.impacts||[]).flatMap(x=>x.downstream||[]).map(x=>x.sheet))];
+    const delayed=(graph.impacts||[]).length;
+    return {
+      nodeCount:graph.nodes?.length||0,
+      edgeCount:graph.edges?.length||0,
+      impactedChains:delayed,
+      downstreamWorksheets:cross,
+      criticalChains:(graph.impacts||[]).slice(0,12)
+    };
+  }
   function renderWorkbookPanel(wi) {
     let el=document.getElementById('agenticWorkbookPanel');
     if(!el){
