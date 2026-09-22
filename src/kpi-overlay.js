@@ -1,6 +1,6 @@
 export const kpiOverlay = String.raw`
 <style id="pm-kpi-overlay-style">
-#kpis.pm-kpi-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+#kpis.pm-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 #kpis.pm-kpi-grid .card{min-width:0;cursor:pointer;position:relative;transition:transform .15s,border-color .15s,box-shadow .15s}
 #kpis.pm-kpi-grid .card:hover{transform:translateY(-2px);border-color:var(--blue);box-shadow:0 10px 28px rgba(0,0,0,.22)}
 #kpis.pm-kpi-grid .card:focus{outline:2px solid var(--blue);outline-offset:2px}
@@ -22,7 +22,7 @@ export const kpiOverlay = String.raw`
 #pm-kpi-detail .sev.critical,#pm-kpi-detail .sev.high{color:var(--red)}
 #pm-kpi-detail .sev.medium{color:var(--amber)}
 #pm-kpi-detail .sev.low{color:var(--blue)}
-@media(max-width:1100px){#kpis.pm-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1100px){#kpis.pm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){#kpis.pm-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#pm-kpi-detail{padding:10px}#pm-kpi-detail .box{padding:12px}}
 </style>
 <script>
@@ -79,7 +79,7 @@ export const kpiOverlay = String.raw`
     const el=document.getElementById('kpis');if(!el)return;
     const ts=getTasks(),total=ts.length;const c={completed:0,delayed:0,risk:0,progress:0};
     ts.forEach(t=>{const s=statusOf(t);if(s in c)c[s]++});
-    const items=[['total',total],['delayed',c.delayed],['risk',c.risk],['completed',c.completed],['progress',c.progress]];
+    const items=[['total',total],['delayed',c.delayed],['risk',c.risk],['completed',c.completed]];
     el.classList.add('pm-kpi-grid');
     el.innerHTML=items.map(([key,n])=>'<div class="card" data-kpi="'+key+'" role="button" tabindex="0" aria-label="Open '+labelMap[key]+' task details"><div class="k">'+labelMap[key]+'</div><div class="v '+COLORS[key]+'">'+n+' <span class="pct">('+pct(n,total)+')</span></div><div class="kpi-sub">of '+total+' total activities · <b>Detail →</b></div></div>').join('');
     el.querySelectorAll('[data-kpi]').forEach(card=>{const fn=()=>openDetail(card.dataset.kpi,total);card.addEventListener('click',fn);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn()}})});
