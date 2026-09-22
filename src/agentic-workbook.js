@@ -125,8 +125,8 @@ const agenticScript = String.raw`(() => {
     const ans=document.getElementById('aiAnswer');ans.value='Analysing all worksheets...';
     try{
       const c=projectChatContext();
-      const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,tasks:c.tasks,changes:c.changes,workbook:c.workbookIntelligence})});
-      const d=await r.json();ans.value=d.report||'No analysis returned.';
+      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:[],context:c})});
+      const d=await r.json();ans.value=d.reply||d.report||'No analysis returned.';
     }catch(e){ans.value='Unable to reach the analysis service. Local PMO workflow remains available.'}
   };
   const status=document.getElementById('mode');
