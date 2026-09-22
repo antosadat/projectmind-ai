@@ -1,4 +1,4 @@
-(() => {
+const agenticScript = String.raw`(() => {
   const norm = v => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g,'');
   const headerWords = {
     task:/task|activity|action|item|deliverable|requirement|milestone|workstream|stream/i,
@@ -131,4 +131,5 @@
   };
   const status=document.getElementById('mode');
   if(status&&importBook)status.textContent='● Agentic Workbook Intelligence Active';
-})();
+})();`;
+export default agenticScript;
