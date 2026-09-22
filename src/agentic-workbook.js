@@ -52,7 +52,7 @@ const agenticScript = String.raw`(() => {
     const sheets=importBook.SheetNames.map(analyzeSheet);
     const allText=sheets.map(s=>s.name+' ['+s.type+']: '+s.headers.join(', ')).join('\n');
     const exceptions=sheets.filter(s=>Object.keys(s.statusCounts).some(k=>k==='Delayed'||k==='At Risk'));
-    return {
+    const out={
       fileName:importFileName||'Workbook',
       worksheetCount:sheets.length,
       analyzedAt:new Date().toISOString(),
