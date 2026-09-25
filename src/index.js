@@ -543,7 +543,7 @@ document.getElementById('askAI').onclick=async()=>{let q=document.getElementById
 const chatHistory=[];
 let pendingAgentActions=[];
 function addChat(role,text){const el=document.createElement('div');el.className='msg '+role;el.textContent=text;document.getElementById('chatMsgs').appendChild(el);el.scrollIntoView({block:'end'});}
-function projectChatContext(){const p=project();return {project:p.name,tasks:p.tasks,changes:changes(),needAttention:(p.tasks||[]).filter(t=>/delay|overdue|risk|blocked/i.test(String(t.status||''))).slice(0,25),capabilities:['analyse_health','prioritise_actions','create_recovery_plan','draft_escalation','update_task_status','update_task_priority','create_need_attention']}}
+function projectChatContext(){const p=project();return {project:p.name,tasks:p.tasks,changes:changes(),documents:p.documents||[],latestDocumentAnalysis:p.latestDocumentAnalysis||'',workbookIntelligence:p.workbook?{fileName:p.workbook.fileName,worksheetCount:p.workbook.worksheetCount,projectCoverage:p.workbook.projectCoverage,exceptionSheets:p.workbook.exceptionSheets,impactSummary:p.workbook.impactSummary}:null,needAttention:(p.tasks||[]).filter(t=>/delay|overdue|risk|blocked/i.test(String(t.status||''))).slice(0,25),capabilities:['analyse_health','analyse_documents','solution_review','implementation_review','professional_testing','monitoring_review','full_stack_review','prioritise_actions','create_recovery_plan','draft_escalation','update_task_status','update_task_priority','create_need_attention']}}
 function applyAgentActions(actions){
   if(!Array.isArray(actions)||!actions.length)return '';
   let p=project(),changed=[];
