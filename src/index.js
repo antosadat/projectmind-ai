@@ -111,9 +111,9 @@ async function analyseUniversalFile(file,projectId){
 function renderDocumentAnalysis(text){const s=String(text||'').replace(/\r/g,'');return '<div class="analysis-text">'+esc(s).replace(/\n/g,'<br>')+'</div>'}
 async function handleProjectFile(f){
   if(!f)return;
-  const base=f.name.replace(/\\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'New Project';
+  const base=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'New Project';
   const id='p'+Date.now();state.projects.push({id,name:base,fileName:f.name,tasks:[],documents:[]});state.active=id;save();render();
-  const isSheet=/\\.(xlsx|xls|csv)$/i.test(f.name);
+  const isSheet=/\.(xlsx|xls|csv)$/i.test(f.name);
   if(!isSheet){try{await analyseUniversalFile(f,id);document.getElementById('tabs').querySelector('[data-tab="advisor"]').click()}catch(e){}return}
   let r=new FileReader();r.onload=ev=>{try{importBook=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});importFileName=f.name;let all=scanWorkbook(importBook),best=all[0];document.getElementById('sheetControl').innerHTML='<span class="badge">Auto · All '+all.length+' worksheets analysed</span><span class="mini muted">'+all.reduce((a,x)=>a+x.usable,0)+' task-like rows detected across the workbook.</span>';document.getElementById('mapping').textContent='Project '+base+' created. Workbook '+f.name+' scanned. All worksheets will be analysed automatically.';importSheet(best.name)}catch(err){document.getElementById('mapping').textContent='Unable to read this file: '+err.message}};r.readAsArrayBuffer(f)
 };
