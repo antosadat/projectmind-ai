@@ -170,8 +170,16 @@ function renderRichAdvisor(data){
     }
     if(v.type==='flow'){
       const nodes=Array.isArray(v.nodes)?v.nodes:[];
-      const flow=nodes.map((n,i)=>'<span class="flow-node">'+escHtml(typeof n==='string'?n:n.label||'Step')+'</span>'+(i<nodes.length-1?'<span class="flow-arrow">→</span>':'')).join('');
-      blocks.push('<div class="rich-block"><div class="rich-title">'+escHtml(v.title||'Solution Flow')+'</div><div class="rich-flow">'+flow+'</div></div>');
+      const labels=nodes.map(n=>String(typeof n==='string'?n:n.label||'Step'));
+      const svgW=900,svgH=Math.max(150,labels.length*92),gap=92;
+      const svgParts=labels.map((label,i)=>{
+        const y=24+i*gap;
+        const safe=escHtml(label).replace(/&amp;/g,'&amp;');
+        return '<g><rect x="80" y="'+y+'" width="740" height="58" rx="16" fill="#0b1b2d" stroke="#4b6f91"/><text x="450" y="'+(y+36)+'" text-anchor="middle" fill="#e8f2ff" font-size="20" font-family="Arial,sans-serif">'+safe+'</text>'+(i<labels.length-1?'<path d="M450 '+(y+58)+' L450 '+(y+gap-8)+'" stroke="#8fb5d8" stroke-width="3" marker-end="url(#a)"/>':'')+'</g>';
+      }).join('');
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+svgW+'" height="'+svgH+'" viewBox="0 0 '+svgW+' '+svgH+'"><defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8fb5d8"/></marker></defs>'+svgParts+'</svg>';
+      const image='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      blocks.push('<div class="rich-block"><div class="rich-title">'+escHtml(v.title||'Solution Architecture')+'</div><img class="generated-visual" src="'+image+'" alt="'+escHtml(v.title||'Solution Architecture')+'"><div class="mini muted">Solution visual generated from the Advisor analysis.</div></div>');
     }
     if(v.type==='table'){
       const headers=Array.isArray(v.headers)?v.headers:[],rows=Array.isArray(v.rows)?v.rows:[];
