@@ -616,7 +616,35 @@ function localAgentReply(message,context){
   if(/health|kondisi|status|project.*saya|project.*ini/.test(q))return health();
   return health()+'\n\nUntuk pertanyaan ini: “'+String(message||'')+'”, saya bisa langsung bantu dengan data dashboard. Coba tanyakan secara spesifik, misalnya: “apa saja yang delay”, “buat recovery plan”, “prioritas hari ini”, “stream mana paling berisiko”, atau “apa yang perlu diescalate ke management”.';
 }
-export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==='/health')return Response.json({status:'online',service:'ProjectMind AI Ultimate',version:'5.0'});if(url.pathname==='/api/chat'&&request.method==='POST'){
+export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==='/health')return Response.json({status:'online',service:'ProjectMind AI Ultimate',version:'5.0'});if(url.pathname==='/api/document-analyze'&&request.method==='POST'){
+  try{
+    const form=await request.formData();const file=form.get('file');const projectName=String(form.get('project')||'Project');
+    if(!file||typeof file.arrayBuffer!=='function')return Response.json({error:'No document file received.'},{status:400});
+    const name=String(file.name||'document'),mime=String(file.type||'application/octet-stream'),size=Number(file.size||0);
+    const ext=(name.split('.').pop()||'').toLowerCase();
+    const supported=/^(pdf|doc|docx|ppt|pptx|xls|xlsx|csv|txt|md|json|xml|html|htm|rtf)$/i.test(ext)||/^image\\//i.test(mime);
+    if(!supported)return Response.json({error:'This file type is not supported for content analysis yet: '+mime},{status:415});
+    if(!env.OPENAI_API_KEY){
+      return Response.json({mode:'local',analysis:'DOCUMENT ANALYSIS\\n\\nProject: '+projectName+'\\nDocument: '+name+'\\nType: '+(mime||ext)+'\\nSize: '+size+' bytes\\n\\nObjective: Content analysis requires the AI document engine. The file was received successfully.\\n\\nNext step: configure OPENAI_API_KEY to enable Solution Expert, Implementation Expert, Professional Tester, Monitoring and Full-Stack analysis.'});
+    }
+    const bytes=await file.arrayBuffer();let content;
+    if(/^image\\//i.test(mime)){
+      let binary='';const arr=new Uint8Array(bytes);const chunk=0x8000;for(let i=0;i<arr.length;i+=chunk)binary+=String.fromCharCode(...arr.subarray(i,Math.min(i+chunk,arr.length)));const b64=btoa(binary);
+      content=[{type:'input_image',image_url:'data:'+(mime||'image/png')+';base64,'+b64}];
+    }else{
+      const fd=new FormData();fd.append('purpose','user_data');fd.append('file',new Blob([bytes],{type:mime||'application/octet-stream'}),name);
+      const upload=await fetch('https://api.openai.com/v1/files',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY},body:fd});
+      const uploaded=await upload.json();if(!upload.ok||!uploaded.id)throw new Error(uploaded.error?.message||'OpenAI file upload failed');
+      content=[{type:'input_file',file_id:uploaded.id}];
+    }
+    const instructions='You are Project Intelligence Universal Expert Analyst. Analyse the supplied document for project delivery, solution, implementation, testing, monitoring and full-stack readiness. Be concise, practical and decision-oriented. Never invent facts. If information is missing, explicitly mark it as a gap. Adapt your analysis to the document type. Use this exact structure:\n\n1. MAKSUD / OBJECTIVE\n- What the document is intended to achieve.\n\n2. KELEBIHAN\n- What is already good, complete or useful.\n\n3. KEKURANGAN / GAP\n- Missing, ambiguous, inconsistent, weak or risky content.\n\n4. SOLUTION YANG PROPER\n- Recommended target solution, design or correction.\n\n5. OUTPUT YANG DISARANKAN\n- Concrete artifacts, fields, diagrams, requirements, controls or decisions that should be produced.\n\n6. PROFESSIONAL TESTING\n- Test scenarios, coverage gaps, entry/exit criteria, negative cases, integration and acceptance concerns.\n\n7. MONITORING & GOVERNANCE\n- KPI, alert, ownership, evidence, audit/control and operational monitoring.\n\n8. IMPLEMENTATION\n- Practical sequence, dependencies, risks and acceptance criteria.\n\n9. PRIORITAS AKSI\n- Maximum 5 actions, ordered by urgency/impact.\n\nRules: use Bahasa Indonesia unless the document clearly requires English terminology; avoid long explanations; distinguish observed facts from recommendations; quote only short labels when needed. Project context: '+projectName+'. Document: '+name+'.';
+    const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5.6-luna',instructions,input:[{role:'user',content}],temperature:.2,max_output_tokens:4500})});
+    const data=await res.json();if(!res.ok)throw new Error(data.error?.message||'Document analysis failed');
+    const text=data.output_text||data.output?.flatMap(x=>x.content||[]).map(x=>x.text||'').filter(Boolean).join('\\n')||'';
+    return Response.json({mode:'ai',analysis:text||'No analysis returned.',file:name,type:mime,size});
+  }catch(e){return Response.json({error:e.message||'Document analysis failed'},{status:500})}
+}
+if(url.pathname==='/api/chat'&&request.method==='POST'){
   const body=await request.json(),message=String(body.message||''),history=Array.isArray(body.history)?body.history.slice(-12):[],context=body.context||{};
   const local=localAgentReply(message,context);
   if(!env.OPENAI_API_KEY)return Response.json({reply:local,actions:[],mode:'local'});
