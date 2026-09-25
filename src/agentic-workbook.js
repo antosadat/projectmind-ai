@@ -188,9 +188,8 @@ const agenticScript = String.raw`(() => {
   }
   const originalFileHandler=document.getElementById('file')?.onchange;
   const file=document.getElementById('file');
-  if(file){
-    file.addEventListener('change',()=>setTimeout(activateAgenticWorkbook,180));
-  }
+  if(file){file.addEventListener('change',()=>setTimeout(activateAgenticWorkbook,180));}
+  window.addEventListener('projectmind:workbook-ready',()=>setTimeout(activateAgenticWorkbook,80));
   const originalContext=window.projectChatContext;
   if(typeof originalContext==='function'){
     window.projectChatContext=function(){
