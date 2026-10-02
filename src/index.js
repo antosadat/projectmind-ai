@@ -900,6 +900,7 @@ function initDependencyGraph(){
  document.getElementById('fitDependencyGraph').onclick=renderDependencyGraph;
  renderDependencyGraph();
 }
+window.addEventListener('projectmind:workbook-ready',()=>{render();renderCommandAI();initDependencyGraph();renderCriticalPath()});
 document.getElementById('refreshCriticalPath').onclick=renderCriticalPath;
 document.getElementById('criticalTask').onchange=renderCriticalImpact;
 document.getElementById('criticalDays').oninput=e=>{document.getElementById('criticalDaysLabel').textContent='+'+e.target.value+' days';renderCriticalImpact()};
