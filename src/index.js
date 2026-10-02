@@ -4,54 +4,12 @@ const html = String.raw`<!doctype html>
 <meta name="theme-color" content="#07111f"><title>ProjectMind AI Ultimate</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-:root{--bg:#07111f;--panel:#0d1a2b;--panel2:#11243b;--line:#223a56;--text:#eef5fc;--muted:#91a4ba;--blue:#5791ff;--green:#39d49a;--amber:#ffc454;--red:#ff6b80}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#12294a 0,#07111f 45%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1440px;margin:auto;padding:18px}.top,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:15px;background:linear-gradient(135deg,#5791ff,#8b6cff);display:grid;place-items:center;font-size:22px}.brand h1{margin:0;font-size:22px}.brand p{margin:3px 0;color:var(--muted);font-size:12px}.pill{padding:7px 10px;border-radius:99px;background:#102d26;color:var(--green);font-size:12px}.tabs{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;margin:18px 0;position:relative;z-index:50;pointer-events:auto;touch-action:pan-x}.tabs button{position:relative;z-index:51;pointer-events:auto!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent}.tabs button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 13px;border-radius:11px;cursor:pointer}.tabs button.active,.btn.primary{background:var(--blue);border-color:var(--blue)}.btn.good{background:#103429;color:var(--green)}.btn.warn{background:#3a2d12;color:var(--amber)}.btn.danger{background:#3a1821;color:var(--red)}.hero{background:linear-gradient(135deg,#0e1d31,#132b49);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:16px}.hero h2{margin:0 0 8px;font-size:26px}.hero p,.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.card,.panel{background:linear-gradient(180deg,var(--panel),#0a1524);border:1px solid var(--line);border-radius:17px;padding:16px}.k{font-size:11px;color:var(--muted);text-transform:uppercase}.v{font-size:30px;font-weight:800;margin-top:6px}.red{color:var(--red)}.green{color:var(--green)}.amber{color:var(--amber)}.blue{color:var(--blue)}.section{display:none}.section.active{display:block}.layout{display:grid;grid-template-columns:1.45fr .85fr;gap:14px}.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel h3{margin:0 0 12px;font-size:16px}.grow{flex:1}.mini{font-size:12px}.tablewrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;border-bottom:1px solid #1a2d43;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#102039;color:#a9bdd3}.tag,.badge{padding:4px 8px;border-radius:99px;font-size:11px;display:inline-block}.tag.red{background:#3b1721}.tag.green{background:#103226}.tag.amber{background:#3c2d10}.tag.blue,.badge{background:#102d4b}.alert,.projectline{padding:13px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#0a1625}.alert{border-left:4px solid var(--amber)}.alert.critical{border-left-color:var(--red)}.alert.good{border-left-color:var(--green)}.projectline.active{border-color:var(--blue);background:#0d2138}.drop{border:1.5px dashed #3a5b7d;border-radius:14px;padding:20px;text-align:center;color:var(--muted)}input,select,textarea{background:#081524;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}textarea{width:100%;min-height:220px;resize:vertical}.footer{margin:18px 0 6px;color:#70849b;font-size:11px;text-align:center}.chat-fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:0;border-radius:50%;background:linear-gradient(135deg,#5791ff,#8b6cff);color:#fff;font-size:24px;cursor:pointer;box-shadow:0 14px 35px rgba(0,0,0,.35);z-index:1000}.chatbox{position:fixed;right:24px;bottom:94px;width:min(430px,calc(100vw - 32px));height:min(640px,calc(100vh - 120px));display:none;flex-direction:column;background:#0a1524;border:1px solid #2b4b70;border-radius:20px;box-shadow:0 25px 70px rgba(0,0,0,.48);overflow:hidden;z-index:1000}.chatbox.open{display:flex}.chathead{padding:15px 16px;background:linear-gradient(135deg,#10284a,#172947);display:flex;align-items:center;justify-content:space-between}.chatmsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}.msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap}.msg.user{align-self:flex-end;background:#1d4f9a}.msg.agent{align-self:flex-start;background:#12243a;border:1px solid #24415f}.quick{display:flex;gap:6px;overflow:auto;padding:0 14px 10px}.quick button{white-space:nowrap;border:1px solid #29445f;background:#0f2033;color:#bcd0e5;border-radius:99px;padding:7px 9px;font-size:11px;cursor:pointer}.chatinput{display:flex;gap:8px;padding:12px;border-top:1px solid #223a56}.chatinput textarea{min-height:42px;height:42px;max-height:100px;padding:10px;font-size:13px}.chatinput button{border:0;border-radius:10px;background:#5791ff;color:#fff;padding:0 14px;cursor:pointer}.portfolio-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.project-card{background:linear-gradient(180deg,#0d1a2b,#0a1524);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;transition:.15s}.project-card:hover,.project-card.active{border-color:var(--blue);transform:translateY(-1px)}.project-card h4{margin:0 0 5px;font-size:15px}.project-card .project-file{font-size:10px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.project-card .project-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.project-card .project-stat{background:#102039;border-radius:9px;padding:8px 5px;text-align:center}.project-card .project-stat b{display:block;font-size:17px}.project-card .project-stat span{font-size:9px;color:var(--muted)}.project-card .project-progress{height:5px;background:#162b43;border-radius:99px;overflow:hidden;margin-top:12px}.project-card .project-progress i{display:block;height:100%;background:var(--green)}.portfolio-actions{display:flex;gap:8px;align-items:center}.portfolio-upload{display:none}.advisor-output{margin-top:14px;border:1px solid var(--line);border-radius:13px;padding:16px;background:#081524;max-height:620px;overflow:auto}.analysis-text{font-size:13px;line-height:1.65;color:#d9e5f0}.evidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.evidence-item{margin:0;overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#07111f;padding:8px}.evidence-item img{width:100%;height:auto;max-height:520px;object-fit:contain;display:block;border-radius:9px;background:#050d16}.evidence-item figcaption{font-size:10px;color:var(--muted);padding:7px 3px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:640px){.evidence-grid{grid-template-columns:1fr}}.rich-answer{display:flex;flex-direction:column;gap:12px}.rich-block{border:1px solid var(--line);border-radius:14px;padding:14px;background:#091827}.rich-title{font-weight:800;margin-bottom:8px}.rich-copy{font-size:13px;line-height:1.65;white-space:pre-wrap}.rich-chart{width:100%;overflow:auto}.rich-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.flow-node{padding:10px 12px;border:1px solid #31557a;border-radius:11px;background:#10243a;min-width:120px;text-align:center;font-size:12px}.flow-arrow{color:var(--blue);font-weight:800}.rich-table{width:100%;border-collapse:collapse;font-size:12px}.rich-table th,.rich-table td{border-bottom:1px solid #20364e;padding:8px;text-align:left;white-space:normal}.rich-table th{position:static;background:#102039}.answer-note{font-size:11px;color:var(--muted)}.analysis-text b{color:#fff}@media(max-width:1000px){.portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.portfolio-grid{grid-template-columns:1fr}}@media(max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}.layout,.split{grid-template-columns:1fr}}@media(max-width:640px){.app{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}.v{font-size:25px}.top{align-items:flex-start}.tabs button{white-space:nowrap}}
-.command-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.risk-bar{height:9px;background:#172b43;border-radius:99px;overflow:hidden}.risk-bar i{display:block;height:100%;background:var(--red)}.risk-item{padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#0a1625}.risk-item.high{border-left:4px solid var(--red)}.risk-item.med{border-left:4px solid var(--amber)}.risk-item.low{border-left:4px solid var(--green)}.scenario{display:grid;grid-template-columns:1fr 1fr;gap:12px}.scenario-stat{background:#102039;border:1px solid var(--line);border-radius:12px;padding:12px}.scenario-stat b{font-size:22px;display:block}.chain{display:flex;flex-wrap:wrap;align-items:center;gap:7px}.chain-node{padding:9px 11px;border:1px solid #31557a;border-radius:10px;background:#10243a;font-size:12px}.chain-arrow{color:var(--blue);font-weight:800}.critical-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.heatmap{display:grid;gap:7px}.heat-row{display:grid;grid-template-columns:2fr 90px 90px 90px 90px;gap:7px;align-items:center;font-size:11px}.heat-cell{padding:8px 7px;border:1px solid var(--line);border-radius:8px;background:#0b1828;text-align:center}.heat-cell.hot{background:#3a1720;border-color:#7d3140}.heat-cell.warn{background:#3b2d12;border-color:#70551c}.heat-cell.cool{background:#103226;border-color:#245a46}.critical-chain{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.critical-node{padding:9px 11px;border-radius:10px;border:1px solid #6c3140;background:#24131a}.critical-node b{display:block;font-size:11px}.critical-node span{font-size:9px;color:#aebfd0}.impact-bar{height:7px;background:#172b43;border-radius:99px;overflow:hidden}.impact-bar i{display:block;height:100%;background:var(--red)}@media(max-width:900px){.critical-grid{grid-template-columns:1fr}.heat-row{grid-template-columns:1.5fr repeat(4,70px);overflow:auto}}@media(max-width:900px){.command-grid,.scenario{grid-template-columns:1fr}}.recovery-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}.recovery-queue{display:grid;gap:8px}.recovery-item{border:1px solid var(--line);border-radius:13px;background:#0a1625;padding:12px}.recovery-item.critical{border-left:4px solid var(--red)}.recovery-item.high{border-left:4px solid var(--amber)}.recovery-item.medium{border-left:4px solid var(--blue)}.recovery-score{font-size:22px;font-weight:800;min-width:52px;text-align:center}.recovery-reasons{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.recovery-reason{font-size:10px;padding:4px 7px;border-radius:99px;background:#10243a;color:#b9cee2;border:1px solid #29435e}.recovery-sequence{display:flex;flex-wrap:wrap;align-items:center;gap:7px}.recovery-node{padding:10px 11px;border-radius:10px;border:1px solid #31557a;background:#10243a;min-width:145px}.recovery-node b{display:block;font-size:11px}.recovery-node span{display:block;font-size:9px;color:#9eb6ce;margin-top:4px}.recovery-impact{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.recovery-impact .scenario-stat{min-height:82px}.recovery-bar{height:7px;background:#172b43;border-radius:99px;overflow:hidden}.recovery-bar i{display:block;height:100%;background:var(--amber)}@media(max-width:900px){.recovery-grid{grid-template-columns:1fr}.recovery-impact{grid-template-columns:1fr}}</style></head><body><div class="app">
+:root{--bg:#07111f;--panel:#0d1a2b;--panel2:#11243b;--line:#223a56;--text:#eef5fc;--muted:#91a4ba;--blue:#5791ff;--green:#39d49a;--amber:#ffc454;--red:#ff6b80}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#12294a 0,#07111f 45%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1440px;margin:auto;padding:18px}.top,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:15px;background:linear-gradient(135deg,#5791ff,#8b6cff);display:grid;place-items:center;font-size:22px}.brand h1{margin:0;font-size:22px}.brand p{margin:3px 0;color:var(--muted);font-size:12px}.pill{padding:7px 10px;border-radius:99px;background:#102d26;color:var(--green);font-size:12px}.tabs{display:flex;gap:8px;overflow:auto;margin:18px 0}.tabs button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 13px;border-radius:11px;cursor:pointer}.tabs button.active,.btn.primary{background:var(--blue);border-color:var(--blue)}.btn.good{background:#103429;color:var(--green)}.btn.warn{background:#3a2d12;color:var(--amber)}.btn.danger{background:#3a1821;color:var(--red)}.hero{background:linear-gradient(135deg,#0e1d31,#132b49);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:16px}.hero h2{margin:0 0 8px;font-size:26px}.hero p,.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.card,.panel{background:linear-gradient(180deg,var(--panel),#0a1524);border:1px solid var(--line);border-radius:17px;padding:16px}.k{font-size:11px;color:var(--muted);text-transform:uppercase}.v{font-size:30px;font-weight:800;margin-top:6px}.red{color:var(--red)}.green{color:var(--green)}.amber{color:var(--amber)}.blue{color:var(--blue)}.section{display:none}.section.active{display:block}.layout{display:grid;grid-template-columns:1.45fr .85fr;gap:14px}.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel h3{margin:0 0 12px;font-size:16px}.grow{flex:1}.mini{font-size:12px}.tablewrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;border-bottom:1px solid #1a2d43;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#102039;color:#a9bdd3}.tag,.badge{padding:4px 8px;border-radius:99px;font-size:11px;display:inline-block}.tag.red{background:#3b1721}.tag.green{background:#103226}.tag.amber{background:#3c2d10}.tag.blue,.badge{background:#102d4b}.alert,.projectline{padding:13px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#0a1625}.alert{border-left:4px solid var(--amber)}.alert.critical{border-left-color:var(--red)}.alert.good{border-left-color:var(--green)}.projectline.active{border-color:var(--blue);background:#0d2138}.drop{border:1.5px dashed #3a5b7d;border-radius:14px;padding:20px;text-align:center;color:var(--muted)}input,select,textarea{background:#081524;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}textarea{width:100%;min-height:220px;resize:vertical}.footer{margin:18px 0 6px;color:#70849b;font-size:11px;text-align:center}.chat-fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:0;border-radius:50%;background:linear-gradient(135deg,#5791ff,#8b6cff);color:#fff;font-size:24px;cursor:pointer;box-shadow:0 14px 35px rgba(0,0,0,.35);z-index:1000}.chatbox{position:fixed;right:24px;bottom:94px;width:min(430px,calc(100vw - 32px));height:min(640px,calc(100vh - 120px));display:none;flex-direction:column;background:#0a1524;border:1px solid #2b4b70;border-radius:20px;box-shadow:0 25px 70px rgba(0,0,0,.48);overflow:hidden;z-index:1000}.chatbox.open{display:flex}.chathead{padding:15px 16px;background:linear-gradient(135deg,#10284a,#172947);display:flex;align-items:center;justify-content:space-between}.chatmsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}.msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap}.msg.user{align-self:flex-end;background:#1d4f9a}.msg.agent{align-self:flex-start;background:#12243a;border:1px solid #24415f}.quick{display:flex;gap:6px;overflow:auto;padding:0 14px 10px}.quick button{white-space:nowrap;border:1px solid #29445f;background:#0f2033;color:#bcd0e5;border-radius:99px;padding:7px 9px;font-size:11px;cursor:pointer}.chatinput{display:flex;gap:8px;padding:12px;border-top:1px solid #223a56}.chatinput textarea{min-height:42px;height:42px;max-height:100px;padding:10px;font-size:13px}.chatinput button{border:0;border-radius:10px;background:#5791ff;color:#fff;padding:0 14px;cursor:pointer}.portfolio-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.project-card{background:linear-gradient(180deg,#0d1a2b,#0a1524);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;transition:.15s}.project-card:hover,.project-card.active{border-color:var(--blue);transform:translateY(-1px)}.project-card h4{margin:0 0 5px;font-size:15px}.project-card .project-file{font-size:10px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.project-card .project-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.project-card .project-stat{background:#102039;border-radius:9px;padding:8px 5px;text-align:center}.project-card .project-stat b{display:block;font-size:17px}.project-card .project-stat span{font-size:9px;color:var(--muted)}.project-card .project-progress{height:5px;background:#162b43;border-radius:99px;overflow:hidden;margin-top:12px}.project-card .project-progress i{display:block;height:100%;background:var(--green)}.portfolio-actions{display:flex;gap:8px;align-items:center}.portfolio-upload{display:none}.advisor-output{margin-top:14px;border:1px solid var(--line);border-radius:13px;padding:16px;background:#081524;max-height:620px;overflow:auto}.analysis-text{font-size:13px;line-height:1.65;color:#d9e5f0}.evidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.evidence-item{margin:0;border:1px solid var(--line);border-radius:13px;background:#07111f;padding:8px}.evidence-item img{width:100%;max-height:320px;object-fit:contain;display:block;border-radius:9px;background:#050d16}.evidence-item figcaption{font-size:10px;color:var(--muted);padding:7px 3px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:640px){.evidence-grid{grid-template-columns:1fr}}.rich-answer{display:flex;flex-direction:column;gap:12px}.rich-block{border:1px solid var(--line);border-radius:14px;padding:14px;background:#091827}.rich-title{font-weight:800;margin-bottom:8px}.rich-copy{font-size:13px;line-height:1.65;white-space:pre-wrap}.rich-chart{width:100%;overflow:auto}.rich-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.flow-node{padding:10px 12px;border:1px solid #31557a;border-radius:11px;background:#10243a;min-width:120px;text-align:center;font-size:12px}.flow-arrow{color:var(--blue);font-weight:800}.rich-table{width:100%;border-collapse:collapse;font-size:12px}.rich-table th,.rich-table td{border-bottom:1px solid #20364e;padding:8px;text-align:left;white-space:normal}.rich-table th{position:static;background:#102039}.answer-note{font-size:11px;color:var(--muted)}.analysis-text b{color:#fff}@media(max-width:1000px){.portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.portfolio-grid{grid-template-columns:1fr}}@media(max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}.layout,.split{grid-template-columns:1fr}}@media(max-width:640px){.app{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}.v{font-size:25px}.top{align-items:flex-start}.tabs button{white-space:nowrap}}
+</style></head><body><div class="app">
 <div class="top"><div class="brand"><div class="logo">🧠</div><div><h1>ProjectMind AI</h1><p>Ultimate PMO Operating System · Portfolio, Recovery & Executive Intelligence</p></div></div><div class="pill" id="mode">● Local Intelligence Active</div></div>
-<div class="tabs" id="tabs"><button class="active" data-tab="command" onclick="activateProjectMindTab('command')">Command Center</button><button data-tab="command-ai" onclick="activateProjectMindTab('command-ai')">AI Command Center</button><button data-tab="portfolio" onclick="activateProjectMindTab('portfolio')">Portfolio</button><button data-tab="tracker" onclick="activateProjectMindTab('tracker')">Tracker</button><button data-tab="changes" onclick="activateProjectMindTab('changes')">Change Intelligence</button><button data-tab="recovery" onclick="activateProjectMindTab('recovery')">Recovery Room</button><button data-tab="executive" onclick="activateProjectMindTab('executive')">Executive Brief</button><button data-tab="advisor" onclick="activateProjectMindTab('advisor')">AI Advisor</button><button data-tab="data" onclick="activateProjectMindTab('data')">Data & Governance</button></div>
+<div class="tabs" id="tabs"><button class="active" data-tab="command">Command Center</button><button data-tab="portfolio">Portfolio</button><button data-tab="tracker">Tracker</button><button data-tab="changes">Change Intelligence</button><button data-tab="recovery">Recovery Room</button><button data-tab="executive">Executive Brief</button><button data-tab="advisor">AI Advisor</button><button data-tab="data">Data & Governance</button></div>
 <section class="section active" id="command"><div class="grid" id="kpis"></div><div class="panel" style="margin-top:14px"><div class="row"><div><h3 style="margin-bottom:4px">Project Portfolio</h3><div class="mini muted">Upload multiple project trackers and monitor them from one dashboard.</div></div><div class="portfolio-actions"><button class="btn primary" id="dashboardUpload">+ Upload Project</button><input class="portfolio-upload" type="file" id="dashboardFile" accept="*/*"></div></div><div id="dashboardProjects" class="portfolio-grid" style="margin-top:12px"></div></div><div class="layout" style="margin-top:14px"><div class="panel"><h3>PMO Alert Centre</h3><div id="alerts"></div></div><div class="panel"><h3>Today’s Control Actions</h3><div id="today"></div></div></div></section>
-<section class="section" id="command-ai">
-<div class="panel">
-  <div class="row"><div><h3 style="margin-bottom:4px">AI Project Command Center</h3><div class="mini muted">Early warning → root cause → impact simulation. Semua analisis dihitung dari tracker project aktif.</div></div><button class="btn primary" id="refreshCommandAI">Refresh Intelligence</button></div>
-  <div class="grid" id="commandAIKpis" style="margin-top:12px"></div>
-</div>
-<div class="command-grid" style="margin-top:14px">
-  <div class="panel"><h3>🚨 Early Warning System</h3><div class="mini muted">Risk score menunjukkan kombinasi status, commitment, ownership, dependency, priority dan progress gap.</div><div id="earlyWarnings" style="margin-top:10px"></div></div>
-  <div class="panel"><h3>🔎 Root Cause Explorer</h3><div class="row"><select id="rootCauseTask" class="grow"></select><button class="btn" id="rootCauseAdvisor">Ask Advisor</button></div><div id="rootCauseView" style="margin-top:12px"></div></div>
-</div>
-<div class="panel" style="margin-top:14px"><div class="row"><div><h3 style="margin-bottom:4px">🕸️ Dependency Impact Graph</h3><div class="mini muted">Visualize upstream dependencies, the selected task, downstream impact and milestone exposure.</div></div><button class="btn" id="fitDependencyGraph">Fit Graph</button></div><div class="row" style="margin-top:10px"><select id="graphTask" class="grow"></select><span class="mini muted" id="graphLegend">🔴 Risk · 🔵 Selected · 🟢 Completed · ⚪ Other</span></div><div id="dependencyGraph" style="margin-top:12px;min-height:360px"></div><div id="dependencyGraphSummary" class="mini muted" style="margin-top:8px"></div></div><div class="panel" style="margin-top:14px">
-<div class="row"><div><h3 style="margin-bottom:4px">🎯 Critical Path & Milestone Impact</h3><div class="mini muted">Identifies the longest dependency chain from available tracker evidence and shows which tasks/milestones are most exposed to schedule movement.</div></div><button class="btn" id="refreshCriticalPath">Recalculate</button></div>
-<div class="critical-grid" style="margin-top:12px">
-  <div>
-    <div class="scenario" id="criticalKpis"></div>
-    <div class="panel" style="margin-top:12px;padding:12px;background:#081524"><div class="row"><b>Critical Chain</b><span class="mini muted" id="criticalChainMeta"></span></div><div class="critical-chain" id="criticalChain" style="margin-top:10px"></div></div>
-  </div>
-  <div class="panel" style="padding:12px;background:#081524"><div class="row"><b>Impact Heatmap</b><span class="mini muted">Risk × dependency × milestone exposure</span></div><div class="heatmap" id="impactHeatmap" style="margin-top:10px"></div></div>
-</div>
-<div class="panel" style="margin-top:12px;padding:12px;background:#081524">
-  <div class="row"><b>Milestone Slip Simulation</b><span class="mini muted">Simulation only — tracker is not modified.</span></div>
-  <div class="row" style="margin-top:9px"><select id="criticalTask" class="grow"></select><label class="mini muted">Delay <input id="criticalDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="criticalDaysLabel">+5 days</b><button class="btn primary" id="runCriticalImpact">Simulate</button></div>
-  <div id="criticalImpactView" style="margin-top:12px"></div>
-</div>
-</div><div class="panel" style="margin-top:14px">
-<div class="row"><div><h3 style="margin-bottom:4px">🚀 Recovery Optimizer</h3><div class="mini muted">Prioritizes recovery work by delivery risk, downstream reach, milestone exposure, dependency blocking and governance gaps. The optimizer does not change tracker data.</div></div><button class="btn primary" id="refreshRecoveryOptimizer">Recalculate</button></div>
-<div class="recovery-grid" style="margin-top:12px">
-  <div>
-    <div class="scenario" id="recoveryOptimizerKpis"></div>
-    <div class="recovery-queue" id="recoveryQueue" style="margin-top:12px"></div>
-  </div>
-  <div>
-    <div class="panel" style="padding:12px;background:#081524">
-      <div class="row"><b>Recovery Sequence</b><span class="mini muted">Fix-first order</span></div>
-      <div id="recoverySequence" class="recovery-sequence" style="margin-top:10px"></div>
-    </div>
-    <div class="panel" style="margin-top:12px;padding:12px;background:#081524">
-      <div class="row"><b>Recovery Impact</b><span class="mini muted">What improves if priority items are fixed</span></div>
-      <div id="recoveryImpact" class="recovery-impact" style="margin-top:10px"></div>
-    </div>
-  </div>
-</div>
-</div><div class="panel" style="margin-top:14px"><h3>🧪 What-If Simulator</h3><div class="row"><select id="whatIfTask" class="grow"></select><label class="mini muted">Delay <input id="whatIfDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="whatIfDaysLabel">+5 days</b><button class="btn primary" id="runWhatIf">Simulate</button></div><div id="whatIfView" style="margin-top:12px"></div></div>
-</section><section class="section" id="portfolio"><div class="layout"><div class="panel"><div class="row"><div><h3 class="grow">Project Portfolio</h3><div class="mini muted">Each uploaded workbook becomes a separate project. Select a project to open its detailed tracker.</div></div><div class="portfolio-actions"><button class="btn" id="newProject">+ Empty Project</button><button class="btn primary" id="portfolioUpload">+ Upload Project</button><input class="portfolio-upload" type="file" id="portfolioFile" accept="*/*"></div></div><div id="projectList"></div></div><div class="panel"><h3>Portfolio Health</h3><div id="portfolioHealth"></div><hr style="border-color:var(--line)"><div class="mini muted">Projects are stored locally in this browser. Each project keeps its own tracker, snapshots and workbook intelligence.</div></div></div></section>
+<section class="section" id="portfolio"><div class="layout"><div class="panel"><div class="row"><div><h3 class="grow">Project Portfolio</h3><div class="mini muted">Each uploaded workbook becomes a separate project. Select a project to open its detailed tracker.</div></div><div class="portfolio-actions"><button class="btn" id="newProject">+ Empty Project</button><button class="btn primary" id="portfolioUpload">+ Upload Project</button><input class="portfolio-upload" type="file" id="portfolioFile" accept="*/*"></div></div><div id="projectList"></div></div><div class="panel"><h3>Portfolio Health</h3><div id="portfolioHealth"></div><hr style="border-color:var(--line)"><div class="mini muted">Projects are stored locally in this browser. Each project keeps its own tracker, snapshots and workbook intelligence.</div></div></div></section>
 <section class="section" id="tracker"><div class="panel"><div class="row"><h3 class="grow">Delivery Tracker</h3><select id="statusFilter"><option value="">All status</option><option>Delayed</option><option>Overdue</option><option>At Risk</option><option>On Track</option><option>Completed</option></select><button class="btn" id="exportCsv">Export CSV</button></div><div class="tablewrap"><table><thead><tr><th>Task</th><th>Status</th><th>Stream</th><th>PIC</th><th>ETA / Commit</th><th>Priority</th><th>Dependency / Blocker</th><th>PMO Action</th></tr></thead><tbody id="taskRows"></tbody></table></div></div></section>
 <section class="section" id="changes"><div class="layout"><div class="panel"><h3>Reporting-cycle Change Intelligence</h3><div class="muted mini">Compares the current tracker against the most recent saved baseline.</div><div id="changeList" style="margin-top:12px"></div></div><div class="panel"><h3>Snapshot Control</h3><div class="row"><button class="btn good" id="saveSnapshot">Save Current Snapshot</button><button class="btn danger" id="clearSnapshots">Clear Project Snapshots</button></div><p class="mini muted">Snapshots capture status, PIC and commitment movement between reporting cycles.</p><div id="snapshotInfo"></div></div></div></section>
 <section class="section" id="recovery"><div class="layout"><div class="panel"><h3>Recovery Plan</h3><div id="recoveryPlan"></div></div><div class="panel"><h3>Recovery Governance Rules</h3><div class="alert critical"><b>No silent ETA movement.</b><br><span class="mini muted">Any revised commitment must retain an accountable PIC and corrective action.</span></div><div class="alert"><b>Dependencies before dates.</b><br><span class="mini muted">Recovery is not credible until upstream blockers are visible and owned.</span></div><div class="alert good"><b>Close the loop.</b><br><span class="mini muted">Final solutions should be reflected in related solution documents before the next control point.</span></div></div></div></section>
@@ -67,30 +25,6 @@ const html = String.raw`<!doctype html>
 </div>
 <div class="footer">ProjectMind AI Ultimate · PMO Operating System · Continuous enhancement foundation</div></div>
 <script>
-window.activateProjectMindTab=function(tab){
-  try{
-    var buttons=document.querySelectorAll('.tabs button[data-tab]');
-    var sections=document.querySelectorAll('.section');
-    buttons.forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===tab);});
-    sections.forEach(function(s){s.classList.toggle('active',s.id===tab);});
-    var target=document.getElementById(tab);
-    if(target)window.scrollTo(0,0);
-  }catch(e){console.error('ProjectMind tab navigation failed',e);}
-};
-document.addEventListener('click',function(e){
-  var b=e.target.closest&&e.target.closest('.tabs button[data-tab]');
-  if(!b)return;
-  e.preventDefault();
-  e.stopPropagation();
-  window.activateProjectMindTab(b.getAttribute('data-tab'));
-},true);
-document.addEventListener('touchend',function(e){
-  var b=e.target.closest&&e.target.closest('.tabs button[data-tab]');
-  if(!b)return;
-  e.preventDefault();
-  e.stopPropagation();
-  window.activateProjectMindTab(b.getAttribute('data-tab'));
-},{capture:true,passive:false});
 const K='projectmind-ultimate-v2';let state=JSON.parse(localStorage.getItem(K)||'{"projects":[{"id":"default","name":"ProjectMind Demo","tasks":[]}],"active":"default","snapshots":{}}');let importBook=null,importFileName='';
 function save(){localStorage.setItem(K,JSON.stringify(state))}function project(){return state.projects.find(p=>p.id===state.active)||state.projects[0]}function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}function key(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 const aliases={task:['task','activity','item','taskname','actionitem','deliverable','requirement'],status:['status','health','rag'],stream:['stream','workstream','phase','area','process'],pic:['pic','owner','responsible','accountable','assignee'],eta:['eta','proposedend','commitdate','commitmentdate','targetdate','duedate','enddate','finishdate','proposedfinish','plannedfinish','baselinefinish'],dependency:['dependency','dependencies','blocker','blockers','preparationneeded'],action:['pmoaction','nextaction','recommendedaction','recommendation','remarks','issue'],priority:['priority','criticality'],percent:['percentcomplete','completion','progress'],delayed:['delayed'],risk:['risk'],impact:['impactanalysis','impact'],issue:['issue','blocker'],alert:['alert','escalation']};
@@ -155,52 +89,26 @@ let rec=project().tasks.filter(x=>/delayed|overdue|risk/i.test(x.status));docume
 let score=m.total?Math.max(0,100-Math.round(m.missing/m.total*100)):0;document.getElementById('quality').innerHTML='<div class="v '+(score<70?'red':score<90?'amber':'green')+'">'+score+'%</div><div class="mini muted">Governance completeness based on PIC and ETA.</div><div class="alert"><b>Recommended control:</b><br><span class="mini muted">Replace TBC ownership and commitments before the next PMO control point.</span></div>';
 let f=[];if(m.deter)f.push('Stop deterioration: '+m.deter+' item(s) worsened versus baseline.');if(m.over)f.push('Recover '+m.over+' delayed / overdue commitment(s).');if(m.risk)f.push('Control '+m.risk+' at-risk item(s) before they slip.');if(m.missing)f.push('Close '+m.missing+' governance gap(s).');if(!f.length)f.push('Maintain commitments and validate upcoming dependencies.');document.getElementById('managementFocus').innerHTML=f.map(v=>'<div class="alert">'+esc(v)+'</div>').join('');
 let total=state.projects.length,tasks=state.projects.reduce((a,p)=>a+p.tasks.length,0),bad=state.projects.reduce((a,p)=>a+p.tasks.filter(x=>/delayed|overdue/i.test(x.status)).length,0);document.getElementById('portfolioHealth').innerHTML='<div class="v blue">'+total+'</div><div class="mini muted">Active project(s)</div><div class="v">'+tasks+'</div><div class="mini muted">Portfolio tasks</div><div class="v '+(bad?'red':'green')+'">'+bad+'</div><div class="mini muted">Delayed / overdue</div>'}
-document.getElementById('tabs').onclick=e=>{const b=e.target.closest('button[data-tab]');if(!b)return;activateProjectMindTab(b.dataset.tab)};
+document.getElementById('tabs').onclick=e=>{if(e.target.tagName!=='BUTTON')return;document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));e.target.classList.add('active');document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(e.target.dataset.tab).classList.add('active')};
 document.getElementById('statusFilter').onchange=render;
 document.getElementById('newProject').onclick=()=>{let n=prompt('Project name');if(!n)return;let id='p'+Date.now();state.projects.push({id,name:n,tasks:[]});state.active=id;save();render()};
 async function extractVisualEvidence(file){
   const box=document.getElementById('visualEvidence');if(!box)return;
-  box.innerHTML='<div class="muted mini">Rendering document visuals...</div>';
-  const name=String(file.name||''),type=String(file.type||'');
-  try{
-    if(/\\.pptx$/i.test(name)){
-      const mod=await import('https://cdn.jsdelivr.net/npm/@aiden0z/pptx-renderer@1.3.0/+esm');
-      const buffer=await file.arrayBuffer();
-      const host=document.createElement('div');
-      host.style.cssText='position:fixed;left:-100000px;top:0;width:1280px;z-index:-1;opacity:0;pointer-events:none';
-      document.body.appendChild(host);
-      const pres=mod.buildPresentation(await mod.parseZip(buffer,mod.RECOMMENDED_ZIP_LIMITS));
-      const slides=pres.slides||[];
-      const images=[];
-      for(let i=0;i<Math.min(slides.length,20);i++){
-        const handle=mod.renderSlide(pres,slides[i],{});
-        host.appendChild(handle.element);
-        if(handle.ready)await handle.ready;
-        const svg=handle.element.querySelector('svg')||handle.element;
-        const clone=svg.cloneNode(true);
-        clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
-        const rect=clone.getBoundingClientRect();
-        if(!clone.getAttribute('viewBox'))clone.setAttribute('viewBox','0 0 '+Math.max(1,Math.round(rect.width))+' '+Math.max(1,Math.round(rect.height)));
-        const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
-        images.push({url:data,label:'Slide '+(i+1)});
-        handle.dispose&&handle.dispose();
-        handle.element.remove();
+  box.innerHTML='<div class="muted mini">Extracting visual evidence...</div>';
+  const type=String(file.type||''),name=String(file.name||''),items=[];
+  if(/^image\//i.test(type))items.push({url:URL.createObjectURL(file),label:name});
+  else if(/\.pptx?$/i.test(name)&&window.JSZip){
+    try{
+      const zip=await JSZip.loadAsync(await file.arrayBuffer());
+      const media=Object.keys(zip.files).filter(x=>/^ppt\/media\//i.test(x));
+      for(const path of media.slice(0,12)){
+        const blob=await zip.files[path].async('blob');
+        items.push({url:URL.createObjectURL(blob),label:path.split('/').pop()});
       }
-      host.remove();
-      if(!images.length)throw new Error('No PPTX slides could be rendered');
-      box.innerHTML='<div class="rich-title">Actual Slide Evidence · '+images.length+' slide(s)</div><div class="evidence-grid">'+images.map(x=>'<figure class="evidence-item"><img src="'+x.url+'" alt="'+esc(x.label)+'"><figcaption>'+esc(x.label)+'</figcaption></figure>').join('')+'</div>';
-      return images;
-    }
-    if(/^image\\//i.test(type)){
-      const url=URL.createObjectURL(file);
-      box.innerHTML='<div class="rich-title">Actual Image Evidence</div><figure class="evidence-item evidence-single"><img src="'+url+'" alt="'+esc(name)+'"><figcaption>'+esc(name)+'</figcaption></figure>';
-      return [{url,label:name}];
-    }
-    box.innerHTML='<div class="muted mini">This document type is analysed by AI; visual slide rendering is currently available for PPTX and image files.</div>';
-  }catch(e){
-    console.error('Visual rendering failed',e);
-    box.innerHTML='<div class="alert critical"><b>Visual rendering failed</b><br><span class="mini muted">'+esc(e.message)+'</span></div>';
+    }catch(e){console.warn('PPT visual extraction failed',e)}
   }
+  if(!items.length){box.innerHTML='<div class="muted mini">No embedded visual evidence could be extracted. The document content is still analysed by the AI engine.</div>';return;}
+  box.innerHTML='<div class="rich-title">Visual Evidence · '+items.length+' image(s)</div><div class="evidence-grid">'+items.map(x=>'<figure class="evidence-item"><img src="'+x.url+'" alt="'+esc(x.label)+'"><figcaption>'+esc(x.label)+'</figcaption></figure>').join('')+'</div>';
 }
 async function analyseUniversalFile(file,projectId){
   extractVisualEvidence(file).catch(()=>{});
@@ -236,16 +144,8 @@ function renderRichAdvisor(data){
     }
     if(v.type==='flow'){
       const nodes=Array.isArray(v.nodes)?v.nodes:[];
-      const labels=nodes.map(n=>String(typeof n==='string'?n:n.label||'Step'));
-      const svgW=900,svgH=Math.max(150,labels.length*92),gap=92;
-      const svgParts=labels.map((label,i)=>{
-        const y=24+i*gap;
-        const safe=escHtml(label).replace(/&amp;/g,'&amp;');
-        return '<g><rect x="80" y="'+y+'" width="740" height="58" rx="16" fill="#0b1b2d" stroke="#4b6f91"/><text x="450" y="'+(y+36)+'" text-anchor="middle" fill="#e8f2ff" font-size="20" font-family="Arial,sans-serif">'+safe+'</text>'+(i<labels.length-1?'<path d="M450 '+(y+58)+' L450 '+(y+gap-8)+'" stroke="#8fb5d8" stroke-width="3" marker-end="url(#a)"/>':'')+'</g>';
-      }).join('');
-      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+svgW+'" height="'+svgH+'" viewBox="0 0 '+svgW+' '+svgH+'"><defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8fb5d8"/></marker></defs>'+svgParts+'</svg>';
-      const image='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-      blocks.push('<div class="rich-block"><div class="rich-title">'+escHtml(v.title||'Solution Architecture')+'</div><img class="generated-visual" src="'+image+'" alt="'+escHtml(v.title||'Solution Architecture')+'"><div class="mini muted">Solution visual generated from the Advisor analysis.</div></div>');
+      const flow=nodes.map((n,i)=>'<span class="flow-node">'+escHtml(typeof n==='string'?n:n.label||'Step')+'</span>'+(i<nodes.length-1?'<span class="flow-arrow">→</span>':'')).join('');
+      blocks.push('<div class="rich-block"><div class="rich-title">'+escHtml(v.title||'Solution Flow')+'</div><div class="rich-flow">'+flow+'</div></div>');
     }
     if(v.type==='table'){
       const headers=Array.isArray(v.headers)?v.headers:[],rows=Array.isArray(v.rows)?v.rows:[];
@@ -265,7 +165,6 @@ async function handleProjectFile(f){
   if(!isSheet){try{await analyseUniversalFile(f,id);document.getElementById('tabs').querySelector('[data-tab="advisor"]').click()}catch(e){}return}
   let r=new FileReader();r.onload=ev=>{try{importBook=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});importFileName=f.name;let all=scanWorkbook(importBook),best=all[0];document.getElementById('sheetControl').innerHTML='<span class="badge">Auto · All '+all.length+' worksheets analysed</span><span class="mini muted">'+all.reduce((a,x)=>a+x.usable,0)+' task-like rows detected across the workbook.</span>';document.getElementById('mapping').textContent='Project '+base+' created. Workbook '+f.name+' scanned. All worksheets will be analysed automatically.';importSheet(best.name);window.dispatchEvent(new CustomEvent('projectmind:workbook-ready'))}catch(err){document.getElementById('mapping').textContent='Unable to read this file: '+err.message}};r.readAsArrayBuffer(f)
 };
-document.getElementById('advisorFile').onchange=async()=>{const f=document.getElementById('advisorFile').files[0];if(f)try{await extractVisualEvidence(f)}catch(e){}};
 document.getElementById('analyseDocument').onclick=async()=>{const f=document.getElementById('advisorFile').files[0];if(!f){alert('Select a document first.');return}try{await analyseUniversalFile(f,project().id)}catch(e){}};
 document.getElementById('analyseCurrentProject').onclick=async()=>{const p=project(),payload={project:p.name,tasks:p.tasks||[],workbook:p.workbook||{},documents:p.documents||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const f=new File([blob],p.name.replace(/[^a-z0-9]+/gi,'_')+'_project_context.json',{type:'application/json'});try{await analyseUniversalFile(f,p.id)}catch(e){}};
 document.getElementById('saveSnapshot').onclick=()=>{let p=project();state.snapshots[p.id]=state.snapshots[p.id]||[];state.snapshots[p.id].push({at:Date.now(),tasks:JSON.parse(JSON.stringify(p.tasks))});save();render()};
@@ -746,277 +645,6 @@ if(document.getElementById('chatClose'))document.getElementById('chatClose').onc
 if(document.getElementById('chatSend'))document.getElementById('chatSend').onclick=()=>sendAgentMessage();
 if(document.getElementById('chatInput'))document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAgentMessage()}});
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>sendAgentMessage(b.dataset.q));
-
-// AI COMMAND CENTER
-function parseDateValue(v){if(!v||/^tbc$/i.test(String(v).trim()))return null;const d=new Date(v);return isNaN(d)?null:d}
-function commandRisk(t){
-  let score=0, reasons=[];
-  const st=String(t.status||'');
-  if(/overdue/i.test(st)){score+=40;reasons.push('Overdue commitment')}
-  else if(/delayed/i.test(st)){score+=35;reasons.push('Delayed status')}
-  else if(/risk|blocked/i.test(st)){score+=25;reasons.push('At-risk / blocked status')}
-  if(!t.pic||/^tbc$/i.test(String(t.pic))){score+=12;reasons.push('PIC belum terkunci')}
-  if(!t.eta||/^tbc$/i.test(String(t.eta))){score+=10;reasons.push('ETA belum terkunci')}
-  if(t.dependency){score+=10;reasons.push('Dependency / blocker terdeteksi')}
-  if(/critical|high/i.test(String(t.priority||''))){score+=10;reasons.push('Priority tinggi')}
-  const pc=parseFloat(String(t.percent||'').replace('%',''));
-  if(!isNaN(pc)&&pc<50&&!/complete/i.test(st)){score+=8;reasons.push('Progress masih <50%')}
-  const dt=parseDateValue(t.eta);if(dt&&dt<Date.now()&&!/complete|closed|done/i.test(st)){score+=15;reasons.push('ETA sudah lewat')}
-  return {score:Math.min(100,score),reasons}
-}
-function commandIntelligence(){
-  const p=project(),ts=Array.isArray(p.tasks)?p.tasks:[], scored=ts.map(t=>({...t,...commandRisk(t)})).sort((a,b)=>b.score-a.score);
-  const high=scored.filter(x=>x.score>=60),med=scored.filter(x=>x.score>=35&&x.score<60),del=ts.filter(x=>/delayed|overdue/i.test(String(x.status||''))),risk=ts.filter(x=>/risk|blocked/i.test(String(x.status||''))),missing=ts.filter(x=>!x.pic||/^tbc$/i.test(String(x.pic))||!x.eta||/^tbc$/i.test(String(x.eta)));
-  return {p,ts,scored,high,med,del,risk,missing};
-}
-
-function recoveryOptimizerMetrics(){
- const cm=criticalMetrics(), metrics=cm.metrics||[], out=cm.out||new Map(), ts=project().tasks||[];
- const downstreamOf=t=>{let seen=new Set(),q=[t];while(q.length){const cur=q.shift();(out.get(cur)||[]).forEach(n=>{if(!seen.has(n)){seen.add(n);q.push(n)}})}return [...seen]};
- const milestoneOf=t=>/go live|deployment|uat|sit|production|release|milestone|cutover|hypercare/i.test(String(t.task||''));
- const rows=ts.map(t=>{
-   const base=commandRisk(t), mx=metrics.find(x=>x.task===t), downstream=downstreamOf(t), milestoneCount=downstream.filter(milestoneOf).length;
-   const reach=Math.min(25,downstream.length*4);
-   const milestone=Math.min(25,milestoneCount*12);
-   const blocker=t.dependency?8:0;
-   const governance=(!t.pic||/^tbc$/i.test(String(t.pic))?6:0)+(!t.eta||/^tbc$/i.test(String(t.eta))?5:0)+(!t.action?4:0);
-   const statusBoost=/overdue/i.test(String(t.status||''))?8:/delayed/i.test(String(t.status||''))?6:/risk|blocked/i.test(String(t.status||''))?4:0;
-   const score=Math.min(100,Math.round(base.score*.45+reach+milestone+blocker+Math.min(15,governance)+statusBoost));
-   const reasons=[];
-   if(base.score>=35)reasons.push('High delivery risk');
-   if(downstream.length)reasons.push(downstream.length+' downstream');
-   if(milestoneCount)reasons.push(milestoneCount+' milestone exposure');
-   if(t.dependency)reasons.push('Dependency blocker');
-   if(!t.pic||/^tbc$/i.test(String(t.pic)))reasons.push('PIC gap');
-   if(!t.eta||/^tbc$/i.test(String(t.eta)))reasons.push('ETA gap');
-   if(!t.action)reasons.push('Recovery action gap');
-   if(/complete|closed|done/i.test(String(t.status||'')))return null;
-   return {task:t,score,base:base.score,downstream,downstreamCount:downstream.length,milestoneCount,reasons,readiness:Math.max(0,100-Math.min(100,governance*7)),metric:mx};
- }).filter(Boolean).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score);
- return {rows,critical:rows.filter(x=>x.score>=70),milestone:rows.filter(x=>x.milestoneCount>0),blocked:rows.filter(x=>x.task.dependency),gaps:rows.filter(x=>/PIC gap|ETA gap/.test(x.reasons.join(' ')))};
-}
-function recoveryActionFor(t){
- if(t.dependency)return 'Unblock dependency first; confirm owner, decision and closure date.';
- if(!t.pic)return 'Lock accountable PIC before accepting the recovery commitment.';
- if(!t.eta)return 'Set a measurable recovery ETA and baseline it in the next control cycle.';
- if(!t.action)return 'Define a concrete recovery action with measurable completion evidence.';
- if(/delayed|overdue/i.test(String(t.status||'')))return t.action||'Execute recovery action and report progress against committed date.';
- return t.action||'Protect the task from converting into a downstream delay.';
-}
-let recoveryOptimizerTimer=0;
-function renderRecoveryOptimizerNow(){
- const box=document.getElementById('recoveryQueue');if(!box)return;
- const x=recoveryOptimizerMetrics(), rows=x.rows.slice(0,10);
- const k=document.getElementById('recoveryOptimizerKpis');
- if(k)k.innerHTML='<div class="scenario-stat"><span class="mini muted">Recovery candidates</span><b>'+x.rows.length+'</b><span class="mini muted">actionable items</span></div><div class="scenario-stat"><span class="mini muted">Critical priority</span><b class="'+(x.critical.length?'red':'green')+'">'+x.critical.length+'</b><span class="mini muted">score ≥70</span></div><div class="scenario-stat"><span class="mini muted">Milestone exposure</span><b class="'+(x.milestone.length?'red':'green')+'">'+x.milestone.length+'</b><span class="mini muted">candidate(s)</span></div><div class="scenario-stat"><span class="mini muted">Dependency blockers</span><b class="'+(x.blocked.length?'amber':'green')+'">'+x.blocked.length+'</b><span class="mini muted">need unblock control</span></div>';
- box.innerHTML=rows.length?rows.map((r,i)=>{const level=r.score>=70?'critical':r.score>=45?'high':'medium',t=r.task;return '<div class="recovery-item '+level+'"><div class="row"><div class="recovery-score '+(r.score>=70?'red':r.score>=45?'amber':'blue')+'">#'+(i+1)+'<br><span style="font-size:11px">'+r.score+'</span></div><div class="grow"><b>'+esc(t.task)+'</b><div class="mini muted">'+esc(t.stream||'General')+' · PIC '+esc(t.pic||'TBC')+' · ETA '+esc(t.eta||'TBC')+'</div><div class="recovery-bar" style="margin:7px 0"><i style="width:'+r.score+'%"></i></div><div class="recovery-reasons">'+r.reasons.slice(0,5).map(z=>'<span class="recovery-reason">'+esc(z)+'</span>').join('')+'</div><div class="mini" style="margin-top:7px"><b>Recovery move:</b> '+esc(recoveryActionFor(t))+'</div></div><div><button class="btn" data-recovery-focus="'+esc(t.task)+'">Focus</button></div></div></div>'}).join(''):'<div class="alert good"><b>No recovery candidate above the optimizer threshold.</b><br><span class="mini muted">Current tracker evidence does not show a material recovery queue.</span></div>';
- const seq=document.getElementById('recoverySequence');
- if(seq)seq.innerHTML=rows.slice(0,5).map((r,i)=>'<div class="recovery-node"><b>'+(i+1)+'. '+esc(String(r.task.task).slice(0,28))+'</b><span>Score '+r.score+' · ↓ '+r.downstreamCount+' · Milestones '+r.milestoneCount+'</span></div>'+(i<Math.min(4,rows.length-1)?'<span class="chain-arrow">→</span>':'')).join('')||'<span class="mini muted">No sequence available.</span>';
- const impact=document.getElementById('recoveryImpact');
- if(impact){
-   const top=rows.slice(0,5),down=new Set(),miles=new Set();
-   top.forEach(r=>r.downstream.forEach(d=>{down.add(d);if(/go live|deployment|uat|sit|production|release|milestone|cutover|hypercare/i.test(String(d.task||'')))miles.add(d)}));
-   impact.innerHTML='<div class="scenario-stat"><span class="mini muted">Downstream protected</span><b class="'+(down.size?'green':'blue')+'">'+down.size+'</b><span class="mini muted">linked task(s)</span></div><div class="scenario-stat"><span class="mini muted">Milestones protected</span><b class="'+(miles.size?'green':'blue')+'">'+miles.size+'</b><span class="mini muted">within top 5</span></div><div class="scenario-stat"><span class="mini muted">Readiness</span><b>'+Math.round(top.reduce((a,r)=>a+r.readiness,0)/Math.max(1,top.length))+'%</b><span class="mini muted">governance completeness</span></div>';
- }
- box.querySelectorAll('[data-recovery-focus]').forEach(b=>b.onclick=()=>{const task=b.getAttribute('data-recovery-focus');const idx=(project().tasks||[]).findIndex(t=>String(t.task)===task);if(idx>=0){document.getElementById('rootCauseTask').value=task;renderRootCause();document.querySelector('[data-tab="tracker"]').click();const row=document.querySelector('#taskRows tr:nth-child('+(idx+1)+')');if(row)row.scrollIntoView({behavior:'smooth',block:'center'})}});
-}
-\nfunction renderCommandAI(){
-  const x=commandIntelligence();
-  const k=document.getElementById('commandAIKpis');if(!k)return;
-  k.innerHTML=[['Critical Risk',x.high.length,'red'],['Watchlist',x.med.length,'amber'],['Delayed / Overdue',x.del.length,'red'],['Ownership / ETA Gap',x.missing.length,'blue']].map(a=>'<div class="card"><div class="k">'+a[0]+'</div><div class="v '+a[2]+'">'+a[1]+'</div><div class="mini muted">current project evidence</div></div>').join('');
-  const ew=document.getElementById('earlyWarnings');
-  const top=x.scored.filter(t=>t.score>=35).slice(0,10);
-  ew.innerHTML=top.length?top.map(t=>'<div class="risk-item '+(t.score>=60?'high':t.score>=35?'med':'low')+'"><div class="row"><b>'+esc(t.task)+'</b><span class="tag '+(t.score>=60?'red':'amber')+'">'+t.score+'/100</span></div><div class="risk-bar" style="margin:8px 0"><i style="width:'+t.score+'%"></i></div><div class="mini muted">'+esc(t.reasons.join(' · '))+'</div><div class="mini muted" style="margin-top:5px">'+esc(t.stream||'General')+' · PIC '+esc(t.pic||'TBC')+' · ETA '+esc(t.eta||'TBC')+'</div></div>').join(''):'<div class="alert good"><b>No material early-warning signal detected.</b><br><span class="mini muted">Current tracker data does not meet the configured risk threshold.</span></div>';
-  const opts=x.ts.map(t=>'<option value="'+esc(t.task)+'">'+esc(t.task)+'</option>').join('');
-  const rc=document.getElementById('rootCauseTask'),wf=document.getElementById('whatIfTask');
-  if(rc){const cur=rc.value;rc.innerHTML='<option value="">Select task…</option>'+opts;if(cur)rc.value=cur;if(!rc.value&&top[0])rc.value=top[0].task}
-  if(wf){const cur=wf.value;wf.innerHTML='<option value="">Select task…</option>'+opts;if(cur)wf.value=cur;if(!wf.value&&top[0])wf.value=top[0].task}
-  renderRootCause();
-  renderWhatIf();
-  renderRecoveryOptimizer();
-}
-function selectedTask(id){const n=document.getElementById(id)?.value;return (project().tasks||[]).find(t=>String(t.task)===String(n))}
-function renderRootCause(){
-  const t=selectedTask('rootCauseTask'),box=document.getElementById('rootCauseView');if(!box)return;
-  if(!t){box.innerHTML='<div class="muted mini">Pilih task untuk membedah evidence dan root cause.</div>';return}
-  const evidence=[];
-  if(t.status)evidence.push('Status: '+t.status);
-  if(t.issue)evidence.push('Issue: '+t.issue);
-  if(t.dependency)evidence.push('Dependency / Blocker: '+t.dependency);
-  if(t.action)evidence.push('Current action: '+t.action);
-  if(t.pic)evidence.push('PIC: '+t.pic);
-  if(t.eta)evidence.push('ETA: '+t.eta);
-  const chain=[];
-  chain.push({label:t.task});
-  if(t.dependency)chain.push({label:'Dependency / Blocker'});
-  if(t.issue)chain.push({label:'Issue / Root Cause Evidence'});
-  chain.push({label:/delayed|overdue/i.test(String(t.status))?'Schedule Impact':'Potential Delivery Impact'});
-  box.innerHTML='<div class="alert '+(/delayed|overdue|risk|blocked/i.test(String(t.status))?'critical':'')+'"><b>Evidence-based finding</b><br><span class="mini muted">'+esc(evidence.join(' · ')||'No supporting fields captured')+'</span></div><div class="chain" style="margin:12px 0">'+chain.map((n,i)=>'<div class="chain-node">'+esc(n.label)+'</div>'+(i<chain.length-1?'<span class="chain-arrow">→</span>':'')).join('')+'</div><div class="mini muted">Interpretation: the system only infers a cause when the tracker contains supporting fields. Missing evidence is shown as a gap rather than invented as fact.</div>';
-}
-function addDaysSafe(v,days){const d=parseDateValue(v);if(!d)return null;d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
-function renderWhatIf(){
-  const t=selectedTask('whatIfTask'),box=document.getElementById('whatIfView');if(!box)return;
-  const days=Number(document.getElementById('whatIfDays')?.value||5);
-  if(!t){box.innerHTML='<div class="muted mini">Pilih task untuk menjalankan simulasi.</div>';return}
-  const all=project().tasks||[],name=String(t.task||'').toLowerCase();
-  const impacted=all.filter(x=>x!==t&&((x.dependency&&x.dependency.toLowerCase().includes(name))||String(x.dependency||'').toLowerCase().includes(String(t.stream||'').toLowerCase())&&x.stream===t.stream)).slice(0,12);
-  const original=addDaysSafe(t.eta,0),shifted=addDaysSafe(t.eta,days);
-  const downstream=impacted.map(x=>({task:x,eta:addDaysSafe(x.eta,days)}));
-  const milestones=downstream.filter(x=>/go live|deployment|uat|sit|production|release|milestone/i.test(String(x.task.task||'')));
-  box.innerHTML='<div class="scenario"><div class="scenario-stat"><span class="mini muted">Selected task</span><b>'+esc(t.task)+'</b><span class="mini muted">'+esc(original||'ETA TBC')+' → '+esc(shifted||'ETA TBC')+'</span></div><div class="scenario-stat"><span class="mini muted">Potential downstream impact</span><b class="'+(impacted.length?'red':'green')+'">'+impacted.length+'</b><span class="mini muted">linked task(s) detected</span></div><div class="scenario-stat"><span class="mini muted">Milestone-like impact</span><b class="'+(milestones.length?'red':'green')+'">'+milestones.length+'</b><span class="mini muted">SIT/UAT/Deployment/Go Live etc.</span></div><div class="scenario-stat"><span class="mini muted">Scenario</span><b>+'+days+' days</b><span class="mini muted">No tracker data is changed.</span></div></div><div class="alert '+(impacted.length?'critical':'good')+'" style="margin-top:12px"><b>Simulation result</b><br><span class="mini muted">'+(impacted.length?'A '+days+'-day movement may propagate to linked downstream work. Validate integrated milestone dates before accepting the change.':'No explicit downstream dependency was detected from the current tracker; this does not prove there is no impact.')+'</span></div>'+(impacted.length?'<div class="tablewrap" style="margin-top:10px"><table class="rich-table"><thead><tr><th>Downstream Task</th><th>Current ETA</th><th>Scenario ETA</th><th>Status</th></tr></thead><tbody>'+downstream.map(x=>'<tr><td>'+esc(x.task.task)+'</td><td>'+esc(x.task.eta||'TBC')+'</td><td>'+esc(x.eta||'TBC')+'</td><td>'+esc(x.task.status||'')+'</td></tr>').join('')+'</tbody></table></div>':'');
-}
-
-function criticalTaskGraph(){
- const all=project().tasks||[], key=v=>String(v||'').trim().toLowerCase();
- const nodes=all.slice(), edges=[], names=nodes.map(t=>key(t.task)).filter(Boolean);
- const findRef=(ref,current)=>{
-   const s=key(ref); if(!s)return null;
-   let hit=nodes.find(x=>x!==current&&key(x.task)===s);
-   if(hit)return hit;
-   hit=nodes.find(x=>x!==current&&s.length>3&&s.includes(key(x.task)));
-   if(hit)return hit;
-   hit=nodes.find(x=>x!==current&&key(x.task).length>3&&s.includes(key(x.task)));
-   return hit||null;
- };
- nodes.forEach(t=>{
-   const refs=[t.dependency,t.issue].filter(Boolean).join(' ');
-   const parts=refs.split(/[,;|\/\n]+/).map(x=>x.trim()).filter(Boolean);
-   parts.forEach(ref=>{const up=findRef(ref,t);if(up&&up!==t&&!edges.some(e=>e.from===up&&e.to===t))edges.push({from:up,to:t})});
-   if(t.stream){
-     const same=nodes.filter(x=>x!==t&&key(x.stream)===key(t.stream));
-     if(same.length===2){
-       const ordered=same.concat(t).sort((a,b)=>{
-         const da=parseDateValue(a.eta)?.getTime()||0, db=parseDateValue(b.eta)?.getTime()||0;
-         return da-db;
-       });
-       const i=ordered.indexOf(t); if(i>0&&!edges.some(e=>e.from===ordered[i-1]&&e.to===t))edges.push({from:ordered[i-1],to:t});
-     }
-   }
- });
- return {nodes,edges};
-}
-function criticalMetrics(){
- const g=criticalTaskGraph(),key=v=>String(v||'').toLowerCase(),out=new Map(),inn=new Map();
- g.nodes.forEach(t=>{out.set(t,[]);inn.set(t,[])});
- g.edges.forEach(e=>{out.get(e.from)?.push(e.to);inn.get(e.to)?.push(e.from)});
- const memo=new Map(),visiting=new Set();
- const downstreamCount=t=>{
-   if(memo.has(t))return memo.get(t);
-   if(visiting.has(t))return 0;
-   visiting.add(t);let n=0;(out.get(t)||[]).forEach(x=>n+=1+downstreamCount(x));visiting.delete(t);
-   memo.set(t,n);return n;
- };
- const score=t=>{
-   let s=commandRisk(t);
-   s=Math.min(100,s+Math.min(25,downstreamCount(t)*5));
-   if(/go live|deployment|uat|sit|production|release|milestone|cutover/i.test(String(t.task||'')))s=Math.min(100,s+20);
-   return s;
- };
- const pathMemo=new Map(),pathVis=new Set();
- const longestFrom=t=>{
-   if(pathMemo.has(t))return pathMemo.get(t);
-   if(pathVis.has(t))return {score:score(t),nodes:[t]};
-   pathVis.add(t);
-   let best={score:score(t),nodes:[t]};
-   (out.get(t)||[]).forEach(n=>{const p=longestFrom(n);const candidate={score:score(t)+p.score,nodes:[t,...p.nodes]};if(candidate.score>best.score)best=candidate});
-   pathVis.delete(t);pathMemo.set(t,best);return best;
- };
- let best={score:0,nodes:[]};
- g.nodes.forEach(t=>{const p=longestFrom(t);if(p.nodes.length>best.nodes.length||(p.nodes.length===best.nodes.length&&p.score>best.score))best=p});
- const metrics=g.nodes.map(t=>({task:t,risk:score(t),downstream:downstreamCount(t),upstream:(inn.get(t)||[]).length,outgoing:(out.get(t)||[]).length,milestone:/go live|deployment|uat|sit|production|release|milestone|cutover/i.test(String(t.task||''))}));
- const chain=best.nodes;
- return {g,out,inn,metrics,chain};
-}
-function renderCriticalPath(){
- const k=document.getElementById('criticalKpis');if(!k)return;
- const m=criticalMetrics(), chain=m.chain, milestones=m.metrics.filter(x=>x.milestone), risk=m.metrics.filter(x=>x.risk>=60), maxDown=Math.max(0,...m.metrics.map(x=>x.downstream));
- k.innerHTML='<div class="scenario-stat"><span class="mini muted">Critical chain</span><b>'+chain.length+'</b><span class="mini muted">task(s)</span></div><div class="scenario-stat"><span class="mini muted">High exposure</span><b class="'+(risk.length?'red':'green')+'">'+risk.length+'</b><span class="mini muted">risk score ≥60</span></div><div class="scenario-stat"><span class="mini muted">Milestones</span><b>'+milestones.length+'</b><span class="mini muted">identified from task names</span></div><div class="scenario-stat"><span class="mini muted">Max downstream reach</span><b>'+maxDown+'</b><span class="mini muted">linked task depth</span></div>';
- document.getElementById('criticalChainMeta').textContent=chain.length?'Exposure-weighted dependency chain':'No dependency chain could be established';
- document.getElementById('criticalChain').innerHTML=chain.length?chain.map((t,i)=>{const x=m.metrics.find(z=>z.task===t);return '<div class="critical-node"><b>'+esc(String(t.task).slice(0,34))+'</b><span>Risk '+x.risk+' · ↓ '+x.downstream+(x.milestone?' · MILESTONE':'')+'</span></div>'+(i<chain.length-1?'<span class="chain-arrow">→</span>':'')}).join(''):'<div class="mini muted">Tracker dependency evidence is insufficient for a critical chain.</div>';
- const rows=m.metrics.slice().sort((a,b)=>b.risk-a.risk).slice(0,12);
- document.getElementById('impactHeatmap').innerHTML='<div class="heat-row"><b>Task</b><b>Risk</b><b>Upstream</b><b>Downstream</b><b>Milestone</b></div>'+rows.map(x=>'<div class="heat-row"><div class="heat-cell">'+esc(String(x.task.task).slice(0,34))+'</div><div class="heat-cell '+(x.risk>=70?'hot':x.risk>=45?'warn':'cool')+'">'+x.risk+'</div><div class="heat-cell">'+x.upstream+'</div><div class="heat-cell '+(x.downstream>=3?'hot':x.downstream?'warn':'cool')+'">'+x.downstream+'</div><div class="heat-cell '+(x.milestone?'hot':'cool')+'">'+(x.milestone?'YES':'—')+'</div></div>').join('');
- const sel=document.getElementById('criticalTask'),cur=sel.value;
- sel.innerHTML='<option value="">Select task to simulate…</option>'+m.metrics.slice().sort((a,b)=>b.risk-a.risk).map(x=>'<option value="'+esc(x.task.task)+'">'+esc(x.task.task)+'</option>').join('');
- if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur; else if(m.chain[0])sel.value=m.chain[0].task;
- renderCriticalImpact();
-}
-function renderCriticalImpact(){
- const box=document.getElementById('criticalImpactView');if(!box)return;
- const t=selectedTask('criticalTask'),days=Number(document.getElementById('criticalDays')?.value||5);
- if(!t){box.innerHTML='<div class="mini muted">Pilih task untuk simulasi milestone impact.</div>';return}
- const m=criticalMetrics(), affected=new Set(), queue=[t];
- while(queue.length){const cur=queue.shift();(m.out.get(cur)||[]).forEach(n=>{if(!affected.has(n)){affected.add(n);queue.push(n)}})}
- const allAffected=[t,...affected], milestones=allAffected.filter(x=>/go live|deployment|uat|sit|production|release|milestone|cutover/i.test(String(x.task||'')));
- const shifted=milestones.map(x=>({task:x,eta:addDaysSafe(x.eta,days)}));
- const maxSlip=milestones.length?days:0;
- const riskAfter=allAffected.filter(x=>commandRisk(x)>=60).length;
- box.innerHTML='<div class="scenario"><div class="scenario-stat"><span class="mini muted">Affected chain</span><b class="'+(allAffected.length>1?'red':'green')+'">'+allAffected.length+'</b><span class="mini muted">including selected task</span></div><div class="scenario-stat"><span class="mini muted">Milestones exposed</span><b class="'+(milestones.length?'red':'green')+'">'+milestones.length+'</b><span class="mini muted">identified milestone-like tasks</span></div><div class="scenario-stat"><span class="mini muted">Max simulated slip</span><b>+'+maxSlip+' days</b><span class="mini muted">if dependency propagates</span></div><div class="scenario-stat"><span class="mini muted">High-risk after scenario</span><b class="'+(riskAfter?'red':'green')+'">'+riskAfter+'</b><span class="mini muted">affected task(s)</span></div></div>'+(milestones.length?'<div class="tablewrap" style="margin-top:10px"><table class="rich-table"><thead><tr><th>Milestone</th><th>Current ETA</th><th>Scenario ETA</th><th>Status</th></tr></thead><tbody>'+shifted.map(x=>'<tr><td>'+esc(x.task.task)+'</td><td>'+esc(x.task.eta||'TBC')+'</td><td>'+esc(x.eta||'TBC')+'</td><td>'+esc(x.task.status||'')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="alert '+(allAffected.length>1?'critical':'good')+'" style="margin-top:10px"><b>Simulation result</b><br><span class="mini muted">'+(allAffected.length>1?'Downstream tasks are structurally linked, but no milestone-like task was identified from the available tracker labels.':'No downstream dependency was established from the current tracker evidence.')+'</span></div>');
-}
-function renderRecoveryOptimizer(){
- clearTimeout(recoveryOptimizerTimer);
- const run=()=>{recoveryOptimizerTimer=0;try{renderRecoveryOptimizerNow()}catch(e){console.error('Recovery Optimizer failed',e);const box=document.getElementById('recoveryQueue');if(box)box.innerHTML='<div class="alert critical"><b>Recovery Optimizer unavailable</b><br><span class="mini muted">The project tracker remains available. Recalculate to retry.</span></div>'}};
- if('requestIdleCallback' in window) recoveryOptimizerTimer=requestIdleCallback(run,{timeout:250});
- else recoveryOptimizerTimer=setTimeout(run,0);
-}
-function graphData(selected){
- const all=project().tasks||[], key=v=>String(v||'').toLowerCase(), sel=key(selected);
- const target=all.find(t=>key(t.task)===sel)||all[0]; if(!target)return {nodes:[],edges:[],target:null};
- const nodes=[target],edges=[],seen=new Set([key(target.task)]);
- const add=(t,dir)=>{if(!t||seen.has(key(t.task)))return;seen.add(key(t.task));nodes.push(t);edges.push({from:dir==='up'?t:target,to:dir==='up'?target:t,dir});};
- const targetName=key(target.task), targetStream=key(target.stream);
- all.forEach(t=>{
-   if(t===target)return;
-   const dep=key(t.dependency), action=key(t.action), issue=key(t.issue);
-   if(dep.includes(targetName)||dep.includes(targetStream)||action.includes(targetName))add(t,'down');
-   if(key(target.dependency).includes(key(t.task))||key(target.dependency).includes(key(t.stream))||key(target.issue).includes(key(t.task)))add(t,'up');
- });
- const streamRelated=all.filter(t=>t!==target&&key(t.stream)===targetStream&&!seen.has(key(t.task))).slice(0,5);
- streamRelated.forEach(t=>add(t,'down'));
- const milestone=all.filter(t=>/go live|deployment|release|production|milestone|cutover/i.test(String(t.task||''))&&!seen.has(key(t.task))).slice(0,4);
- milestone.forEach(t=>add(t,'down'));
- return {nodes,edges,target};
-}
-function graphStatus(t){const s=String(t.status||'');if(/delayed|overdue/i.test(s))return'risk';if(/risk|blocked/i.test(s))return'risk';if(/complete|done|closed/i.test(s))return'done';return'other'}
-function renderDependencyGraph(){
- const box=document.getElementById('dependencyGraph');if(!box)return;
- const sel=document.getElementById('graphTask')?.value||'';
- const d=graphData(sel);
- if(!d.target){box.innerHTML='<div class="alert">No task data available. Upload a tracker first.</div>';return}
- const ns=d.nodes.slice(0,16), W=1000, H=Math.max(330,Math.ceil(ns.length/4)*125);
- const pos=ns.map((n,i)=>({x:100+(i%4)*265,y:35+Math.floor(i/4)*125,n}));
- const by=new Map(pos.map(p=>[String(p.n.task).toLowerCase(),p]));
- const paths=d.edges.map(e=>{const a=by.get(String(e.from.task).toLowerCase()),b=by.get(String(e.to.task).toLowerCase());return a&&b?'<line x1="'+a.x+'" y1="'+(a.y+38)+'" x2="'+b.x+'" y2="'+(b.y+38)+'" stroke="#517da8" stroke-width="2" marker-end="url(#arrow)"/>':''}).join('');
- const cards=pos.map(p=>{const t=p.n,st=graphStatus(t),fill=st==='risk'?'#3a1720':st==='done'?'#123022':String(t.task).toLowerCase()===String(d.target.task).toLowerCase()?'#102b4d':'#102039',stroke=st==='risk'?'#e05b66':String(t.task).toLowerCase()===String(d.target.task).toLowerCase()?'#5791ff':'#31557a';return '<g class="dg-node" data-task="'+esc(t.task)+'" style="cursor:pointer"><rect x="'+(p.x-105)+'" y="'+p.y+'" width="210" height="76" rx="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+27)+'" text-anchor="middle" fill="#e8f2ff" font-size="12" font-weight="700">'+esc(String(t.task).slice(0,28))+'</text><text x="'+p.x+'" y="'+(p.y+47)+'" text-anchor="middle" fill="#9eb6ce" font-size="10">'+esc(String(t.stream||'General').slice(0,25))+'</text><text x="'+p.x+'" y="'+(p.y+64)+'" text-anchor="middle" fill="'+(st==='risk'?'#ff9aa3':'#a9c3dc')+'" font-size="9">'+esc(String(t.status||'').slice(0,24))+'</text></g>'}).join('');
- box.innerHTML='<svg id="dependencySvg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Dependency impact graph"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#517da8"/></marker></defs>'+paths+cards+'</svg>';
- box.querySelectorAll('.dg-node').forEach(n=>n.onclick=()=>{const t=n.dataset.task;document.getElementById('graphTask').value=t;renderDependencyGraph();document.getElementById('rootCauseTask').value=t;renderRootCause();});
- document.getElementById('dependencyGraphSummary').textContent='Selected: '+d.target.task+' · '+Math.max(0,ns.length-1)+' related task(s) visualized. Click any node to re-center the graph.';
-}
-function initDependencyGraph(){
- const sel=document.getElementById('graphTask');if(!sel)return;
- const cur=sel.value;sel.innerHTML='<option value="">Select focal task…</option>'+(project().tasks||[]).map(t=>'<option value="'+esc(t.task)+'">'+esc(t.task)+'</option>').join('');
- if(cur)sel.value=cur;
- if(!sel.value){const x=commandIntelligence().scored[0];if(x)sel.value=x.task}
- sel.onchange=renderDependencyGraph;
- document.getElementById('fitDependencyGraph').onclick=renderDependencyGraph;
- renderDependencyGraph();
-}
-window.addEventListener('projectmind:workbook-ready',()=>{render();renderCommandAI();initDependencyGraph();renderCriticalPath();renderRecoveryOptimizer()});
-document.getElementById('refreshCriticalPath').onclick=renderCriticalPath;
-document.getElementById('criticalTask').onchange=renderCriticalImpact;
-document.getElementById('criticalDays').oninput=e=>{document.getElementById('criticalDaysLabel').textContent='+'+e.target.value+' days';renderCriticalImpact()};
-document.getElementById('runCriticalImpact').onclick=renderCriticalImpact;
-document.getElementById('refreshCommandAI').onclick=()=>{renderCommandAI();initDependencyGraph();renderCriticalPath();renderRecoveryOptimizer()};
-document.getElementById('refreshRecoveryOptimizer').onclick=renderRecoveryOptimizer;
-document.getElementById('rootCauseTask').onchange=renderRootCause;
-document.getElementById('rootCauseAdvisor').onclick=()=>{const t=selectedTask('rootCauseTask');if(!t)return;document.getElementById('question').value='Analyse root cause, evidence, impact and corrective action for task: '+t.task;document.querySelector('[data-tab="advisor"]').click();askAdvisorFreeText()};
-document.getElementById('whatIfTask').onchange=renderWhatIf;
-document.getElementById('whatIfDays').oninput=e=>{document.getElementById('whatIfDaysLabel').textContent='+'+e.target.value+' days';renderWhatIf()};
-document.getElementById('runWhatIf').onclick=renderWhatIf;
-
-renderCommandAI();
-initDependencyGraph();
-renderCriticalPath();
-renderRecoveryOptimizer();
 render();
 </script></body></html>`;
 
