@@ -18,7 +18,7 @@ const html = String.raw`<!doctype html>
   <div class="panel"><h3>🚨 Early Warning System</h3><div class="mini muted">Risk score menunjukkan kombinasi status, commitment, ownership, dependency, priority dan progress gap.</div><div id="earlyWarnings" style="margin-top:10px"></div></div>
   <div class="panel"><h3>🔎 Root Cause Explorer</h3><div class="row"><select id="rootCauseTask" class="grow"></select><button class="btn" id="rootCauseAdvisor">Ask Advisor</button></div><div id="rootCauseView" style="margin-top:12px"></div></div>
 </div>
-<div class="panel" style="margin-top:14px"><h3>🧪 What-If Simulator</h3><div class="row"><select id="whatIfTask" class="grow"></select><label class="mini muted">Delay <input id="whatIfDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="whatIfDaysLabel">+5 days</b><button class="btn primary" id="runWhatIf">Simulate</button></div><div id="whatIfView" style="margin-top:12px"></div></div>
+<div class="panel" style="margin-top:14px"><div class="row"><div><h3 style="margin-bottom:4px">🕸️ Dependency Impact Graph</h3><div class="mini muted">Visualize upstream dependencies, the selected task, downstream impact and milestone exposure.</div></div><button class="btn" id="fitDependencyGraph">Fit Graph</button></div><div class="row" style="margin-top:10px"><select id="graphTask" class="grow"></select><span class="mini muted" id="graphLegend">🔴 Risk · 🔵 Selected · 🟢 Completed · ⚪ Other</span></div><div id="dependencyGraph" style="margin-top:12px;min-height:360px"></div><div id="dependencyGraphSummary" class="mini muted" style="margin-top:8px"></div></div><div class="panel" style="margin-top:14px"><h3>🧪 What-If Simulator</h3><div class="row"><select id="whatIfTask" class="grow"></select><label class="mini muted">Delay <input id="whatIfDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="whatIfDaysLabel">+5 days</b><button class="btn primary" id="runWhatIf">Simulate</button></div><div id="whatIfView" style="margin-top:12px"></div></div>
 </section><section class="section" id="portfolio"><div class="layout"><div class="panel"><div class="row"><div><h3 class="grow">Project Portfolio</h3><div class="mini muted">Each uploaded workbook becomes a separate project. Select a project to open its detailed tracker.</div></div><div class="portfolio-actions"><button class="btn" id="newProject">+ Empty Project</button><button class="btn primary" id="portfolioUpload">+ Upload Project</button><input class="portfolio-upload" type="file" id="portfolioFile" accept="*/*"></div></div><div id="projectList"></div></div><div class="panel"><h3>Portfolio Health</h3><div id="portfolioHealth"></div><hr style="border-color:var(--line)"><div class="mini muted">Projects are stored locally in this browser. Each project keeps its own tracker, snapshots and workbook intelligence.</div></div></div></section>
 <section class="section" id="tracker"><div class="panel"><div class="row"><h3 class="grow">Delivery Tracker</h3><select id="statusFilter"><option value="">All status</option><option>Delayed</option><option>Overdue</option><option>At Risk</option><option>On Track</option><option>Completed</option></select><button class="btn" id="exportCsv">Export CSV</button></div><div class="tablewrap"><table><thead><tr><th>Task</th><th>Status</th><th>Stream</th><th>PIC</th><th>ETA / Commit</th><th>Priority</th><th>Dependency / Blocker</th><th>PMO Action</th></tr></thead><tbody id="taskRows"></tbody></table></div></div></section>
 <section class="section" id="changes"><div class="layout"><div class="panel"><h3>Reporting-cycle Change Intelligence</h3><div class="muted mini">Compares the current tracker against the most recent saved baseline.</div><div id="changeList" style="margin-top:12px"></div></div><div class="panel"><h3>Snapshot Control</h3><div class="row"><button class="btn good" id="saveSnapshot">Save Current Snapshot</button><button class="btn danger" id="clearSnapshots">Clear Project Snapshots</button></div><p class="mini muted">Snapshots capture status, PIC and commitment movement between reporting cycles.</p><div id="snapshotInfo"></div></div></div></section>
@@ -757,14 +757,58 @@ function renderWhatIf(){
   const milestones=downstream.filter(x=>/go live|deployment|uat|sit|production|release|milestone/i.test(String(x.task.task||'')));
   box.innerHTML='<div class="scenario"><div class="scenario-stat"><span class="mini muted">Selected task</span><b>'+esc(t.task)+'</b><span class="mini muted">'+esc(original||'ETA TBC')+' → '+esc(shifted||'ETA TBC')+'</span></div><div class="scenario-stat"><span class="mini muted">Potential downstream impact</span><b class="'+(impacted.length?'red':'green')+'">'+impacted.length+'</b><span class="mini muted">linked task(s) detected</span></div><div class="scenario-stat"><span class="mini muted">Milestone-like impact</span><b class="'+(milestones.length?'red':'green')+'">'+milestones.length+'</b><span class="mini muted">SIT/UAT/Deployment/Go Live etc.</span></div><div class="scenario-stat"><span class="mini muted">Scenario</span><b>+'+days+' days</b><span class="mini muted">No tracker data is changed.</span></div></div><div class="alert '+(impacted.length?'critical':'good')+'" style="margin-top:12px"><b>Simulation result</b><br><span class="mini muted">'+(impacted.length?'A '+days+'-day movement may propagate to linked downstream work. Validate integrated milestone dates before accepting the change.':'No explicit downstream dependency was detected from the current tracker; this does not prove there is no impact.')+'</span></div>'+(impacted.length?'<div class="tablewrap" style="margin-top:10px"><table class="rich-table"><thead><tr><th>Downstream Task</th><th>Current ETA</th><th>Scenario ETA</th><th>Status</th></tr></thead><tbody>'+downstream.map(x=>'<tr><td>'+esc(x.task.task)+'</td><td>'+esc(x.task.eta||'TBC')+'</td><td>'+esc(x.eta||'TBC')+'</td><td>'+esc(x.task.status||'')+'</td></tr>').join('')+'</tbody></table></div>':'');
 }
+function graphData(selected){
+ const all=project().tasks||[], key=v=>String(v||'').toLowerCase(), sel=key(selected);
+ const target=all.find(t=>key(t.task)===sel)||all[0]; if(!target)return {nodes:[],edges:[],target:null};
+ const nodes=[target],edges=[],seen=new Set([key(target.task)]);
+ const add=(t,dir)=>{if(!t||seen.has(key(t.task)))return;seen.add(key(t.task));nodes.push(t);edges.push({from:dir==='up'?t:target,to:dir==='up'?target:t,dir});};
+ const targetName=key(target.task), targetStream=key(target.stream);
+ all.forEach(t=>{
+   if(t===target)return;
+   const dep=key(t.dependency), action=key(t.action), issue=key(t.issue);
+   if(dep.includes(targetName)||dep.includes(targetStream)||action.includes(targetName))add(t,'down');
+   if(key(target.dependency).includes(key(t.task))||key(target.dependency).includes(key(t.stream))||key(target.issue).includes(key(t.task)))add(t,'up');
+ });
+ const streamRelated=all.filter(t=>t!==target&&key(t.stream)===targetStream&&!seen.has(key(t.task))).slice(0,5);
+ streamRelated.forEach(t=>add(t,'down'));
+ const milestone=all.filter(t=>/go live|deployment|release|production|milestone|cutover/i.test(String(t.task||''))&&!seen.has(key(t.task))).slice(0,4);
+ milestone.forEach(t=>add(t,'down'));
+ return {nodes,edges,target};
+}
+function graphStatus(t){const s=String(t.status||'');if(/delayed|overdue/i.test(s))return'risk';if(/risk|blocked/i.test(s))return'risk';if(/complete|done|closed/i.test(s))return'done';return'other'}
+function renderDependencyGraph(){
+ const box=document.getElementById('dependencyGraph');if(!box)return;
+ const sel=document.getElementById('graphTask')?.value||'';
+ const d=graphData(sel);
+ if(!d.target){box.innerHTML='<div class="alert">No task data available. Upload a tracker first.</div>';return}
+ const ns=d.nodes.slice(0,16), W=1000, H=Math.max(330,Math.ceil(ns.length/4)*125);
+ const pos=ns.map((n,i)=>({x:100+(i%4)*265,y:35+Math.floor(i/4)*125,n}));
+ const by=new Map(pos.map(p=>[String(p.n.task).toLowerCase(),p]));
+ const paths=d.edges.map(e=>{const a=by.get(String(e.from.task).toLowerCase()),b=by.get(String(e.to.task).toLowerCase());return a&&b?'<line x1="'+a.x+'" y1="'+(a.y+38)+'" x2="'+b.x+'" y2="'+(b.y+38)+'" stroke="#517da8" stroke-width="2" marker-end="url(#arrow)"/>':''}).join('');
+ const cards=pos.map(p=>{const t=p.n,st=graphStatus(t),fill=st==='risk'?'#3a1720':st==='done'?'#123022':String(t.task).toLowerCase()===String(d.target.task).toLowerCase()?'#102b4d':'#102039',stroke=st==='risk'?'#e05b66':String(t.task).toLowerCase()===String(d.target.task).toLowerCase()?'#5791ff':'#31557a';return '<g class="dg-node" data-task="'+esc(t.task)+'" style="cursor:pointer"><rect x="'+(p.x-105)+'" y="'+p.y+'" width="210" height="76" rx="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+27)+'" text-anchor="middle" fill="#e8f2ff" font-size="12" font-weight="700">'+esc(String(t.task).slice(0,28))+'</text><text x="'+p.x+'" y="'+(p.y+47)+'" text-anchor="middle" fill="#9eb6ce" font-size="10">'+esc(String(t.stream||'General').slice(0,25))+'</text><text x="'+p.x+'" y="'+(p.y+64)+'" text-anchor="middle" fill="'+(st==='risk'?'#ff9aa3':'#a9c3dc')+'" font-size="9">'+esc(String(t.status||'').slice(0,24))+'</text></g>'}).join('');
+ box.innerHTML='<svg id="dependencySvg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Dependency impact graph"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#517da8"/></marker></defs>'+paths+cards+'</svg>';
+ box.querySelectorAll('.dg-node').forEach(n=>n.onclick=()=>{const t=n.dataset.task;document.getElementById('graphTask').value=t;renderDependencyGraph();document.getElementById('rootCauseTask').value=t;renderRootCause();});
+ document.getElementById('dependencyGraphSummary').textContent='Selected: '+d.target.task+' · '+Math.max(0,ns.length-1)+' related task(s) visualized. Click any node to re-center the graph.';
+}
+function initDependencyGraph(){
+ const sel=document.getElementById('graphTask');if(!sel)return;
+ const cur=sel.value;sel.innerHTML='<option value="">Select focal task…</option>'+(project().tasks||[]).map(t=>'<option value="'+esc(t.task)+'">'+esc(t.task)+'</option>').join('');
+ if(cur)sel.value=cur;
+ if(!sel.value){const x=commandIntelligence().scored[0];if(x)sel.value=x.task}
+ sel.onchange=renderDependencyGraph;
+ document.getElementById('fitDependencyGraph').onclick=renderDependencyGraph;
+ renderDependencyGraph();
+}
 document.getElementById('refreshCommandAI').onclick=renderCommandAI;
 document.getElementById('rootCauseTask').onchange=renderRootCause;
 document.getElementById('rootCauseAdvisor').onclick=()=>{const t=selectedTask('rootCauseTask');if(!t)return;document.getElementById('question').value='Analyse root cause, evidence, impact and corrective action for task: '+t.task;document.querySelector('[data-tab="advisor"]').click();askAdvisorFreeText()};
 document.getElementById('whatIfTask').onchange=renderWhatIf;
+initDependencyGraph();
 document.getElementById('whatIfDays').oninput=e=>{document.getElementById('whatIfDaysLabel').textContent='+'+e.target.value+' days';renderWhatIf()};
 document.getElementById('runWhatIf').onclick=renderWhatIf;
 
 renderCommandAI();
+initDependencyGraph();
 render();
 </script></body></html>`;
 
