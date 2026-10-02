@@ -803,7 +803,6 @@ document.getElementById('refreshCommandAI').onclick=renderCommandAI;
 document.getElementById('rootCauseTask').onchange=renderRootCause;
 document.getElementById('rootCauseAdvisor').onclick=()=>{const t=selectedTask('rootCauseTask');if(!t)return;document.getElementById('question').value='Analyse root cause, evidence, impact and corrective action for task: '+t.task;document.querySelector('[data-tab="advisor"]').click();askAdvisorFreeText()};
 document.getElementById('whatIfTask').onchange=renderWhatIf;
-initDependencyGraph();
 document.getElementById('whatIfDays').oninput=e=>{document.getElementById('whatIfDaysLabel').textContent='+'+e.target.value+' days';renderWhatIf()};
 document.getElementById('runWhatIf').onclick=renderWhatIf;
 
