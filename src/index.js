@@ -779,7 +779,8 @@ function recoveryActionFor(t){
  if(/delayed|overdue/i.test(String(t.status||'')))return t.action||'Execute recovery action and report progress against committed date.';
  return t.action||'Protect the task from converting into a downstream delay.';
 }
-function renderRecoveryOptimizer(){
+let recoveryOptimizerTimer=0;
+function renderRecoveryOptimizerNow(){
  const box=document.getElementById('recoveryQueue');if(!box)return;
  const x=recoveryOptimizerMetrics(), rows=x.rows.slice(0,10);
  const k=document.getElementById('recoveryOptimizerKpis');
@@ -926,6 +927,12 @@ function renderCriticalImpact(){
  const maxSlip=milestones.length?days:0;
  const riskAfter=allAffected.filter(x=>commandRisk(x)>=60).length;
  box.innerHTML='<div class="scenario"><div class="scenario-stat"><span class="mini muted">Affected chain</span><b class="'+(allAffected.length>1?'red':'green')+'">'+allAffected.length+'</b><span class="mini muted">including selected task</span></div><div class="scenario-stat"><span class="mini muted">Milestones exposed</span><b class="'+(milestones.length?'red':'green')+'">'+milestones.length+'</b><span class="mini muted">identified milestone-like tasks</span></div><div class="scenario-stat"><span class="mini muted">Max simulated slip</span><b>+'+maxSlip+' days</b><span class="mini muted">if dependency propagates</span></div><div class="scenario-stat"><span class="mini muted">High-risk after scenario</span><b class="'+(riskAfter?'red':'green')+'">'+riskAfter+'</b><span class="mini muted">affected task(s)</span></div></div>'+(milestones.length?'<div class="tablewrap" style="margin-top:10px"><table class="rich-table"><thead><tr><th>Milestone</th><th>Current ETA</th><th>Scenario ETA</th><th>Status</th></tr></thead><tbody>'+shifted.map(x=>'<tr><td>'+esc(x.task.task)+'</td><td>'+esc(x.task.eta||'TBC')+'</td><td>'+esc(x.eta||'TBC')+'</td><td>'+esc(x.task.status||'')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="alert '+(allAffected.length>1?'critical':'good')+'" style="margin-top:10px"><b>Simulation result</b><br><span class="mini muted">'+(allAffected.length>1?'Downstream tasks are structurally linked, but no milestone-like task was identified from the available tracker labels.':'No downstream dependency was established from the current tracker evidence.')+'</span></div>');
+}
+function renderRecoveryOptimizer(){
+ clearTimeout(recoveryOptimizerTimer);
+ const run=()=>{recoveryOptimizerTimer=0;try{renderRecoveryOptimizerNow()}catch(e){console.error('Recovery Optimizer failed',e);const box=document.getElementById('recoveryQueue');if(box)box.innerHTML='<div class="alert critical"><b>Recovery Optimizer unavailable</b><br><span class="mini muted">The project tracker remains available. Recalculate to retry.</span></div>'}};
+ if('requestIdleCallback' in window) recoveryOptimizerTimer=requestIdleCallback(run,{timeout:250});
+ else recoveryOptimizerTimer=setTimeout(run,0);
 }
 function graphData(selected){
  const all=project().tasks||[], key=v=>String(v||'').toLowerCase(), sel=key(selected);
