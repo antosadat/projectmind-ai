@@ -10,6 +10,10 @@ const BG_SOURCE='https://cdn.jsdelivr.net/gh/antosadat/projectmind-ai@e0331c8130
 export default {
   async fetch(request, env, ctx) {
     const response = await base.fetch(request, env, ctx);
+    const securityHeaders = new Headers(response.headers);
+    securityHeaders.set('x-content-type-options','nosniff');
+    securityHeaders.set('referrer-policy','strict-origin-when-cross-origin');
+    securityHeaders.set('permissions-policy','camera=(self), microphone=(self), geolocation=()');
     const url = new URL(request.url);
     const ct = response.headers.get('content-type') || '';
     if (url.pathname === '/agentic-workbook.js') {
@@ -103,6 +107,6 @@ export default {
       headers.set('cache-control','no-store, no-cache, must-revalidate');
       return new Response(injected,{status:response.status,headers});
     }
-    return response;
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers:securityHeaders});
   }
 };
