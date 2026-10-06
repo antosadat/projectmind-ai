@@ -15,6 +15,22 @@ export default {
     if (url.pathname === '/agentic-workbook.js') {
       return new Response(agenticScript,{headers:{'content-type':'application/javascript;charset=UTF-8','cache-control':'no-store'}});
     }
+
+    if (url.pathname === '/manifest.webmanifest') {
+      return new Response(JSON.stringify({
+        name:'Project Intelligence',
+        short_name:'ProjectMind',
+        start_url:'/',
+        display:'standalone',
+        background_color:'#07111f',
+        theme_color:'#07111f',
+        description:'Project intelligence, monitoring and AI command center.'
+      }),{headers:{'content-type':'application/manifest+json;charset=UTF-8','cache-control':'no-store'}});
+    }
+    if (url.pathname === '/sw.js') {
+      const sw = `self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).catch(()=>new Response('',{status:503,statusText:'Offline'})));});`;
+      return new Response(sw,{headers:{'content-type':'application/javascript;charset=UTF-8','cache-control':'no-store'}});
+    }
     if (url.pathname === '/' && ct.includes('text/html')) {
       const text = await response.text();
       const branded = text.split(OLD).join(BRAND).split('ProjectMind').join(BRAND);
