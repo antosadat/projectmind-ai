@@ -32,7 +32,7 @@ const html = String.raw`<!doctype html>
   <div class="row" style="margin-top:9px"><select id="criticalTask" class="grow"></select><label class="mini muted">Delay <input id="criticalDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="criticalDaysLabel">+5 days</b><button class="btn primary" id="runCriticalImpact">Simulate</button></div>
   <div id="criticalImpactView" style="margin-top:12px"></div>
 </div>
-</div><div class="panel" style="margin-top:14px"><h3>🧪 What-If Simulator</h3><div class="row"><select id="whatIfTask" class="grow"></select><label class="mini muted">Delay <input id="whatIfDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="whatIfDaysLabel">+5 days</b><button class="btn primary" id="runWhatIf">Simulate</button></div><div id="whatIfView" style="margin-top:12px"></div></div>
+</div><div class="panel" style="margin-top:14px"><div class="row"><div><h3 style="margin-bottom:4px">⚡ Recovery Optimizer</h3><div class="mini muted">Prioritizes delayed and at-risk activities using status, priority, dependency, commitment and progress signals.</div></div><button class="btn" id="refreshRecoveryOptimizer">Recalculate</button></div><div class="grid" id="recoveryOptimizerKpis" style="margin-top:12px"></div><div id="recoveryQueue" style="margin-top:10px"></div></div><div class="panel" style="margin-top:14px"><h3>🧪 What-If Simulator</h3><div class="row"><select id="whatIfTask" class="grow"></select><label class="mini muted">Delay <input id="whatIfDays" type="range" min="1" max="30" value="5" style="vertical-align:middle"></label><b id="whatIfDaysLabel">+5 days</b><button class="btn primary" id="runWhatIf">Simulate</button></div><div id="whatIfView" style="margin-top:12px"></div></div>
 </section><section class="section" id="portfolio"><div class="layout"><div class="panel"><div class="row"><div><h3 class="grow">Project Portfolio</h3><div class="mini muted">Each uploaded workbook becomes a separate project. Select a project to open its detailed tracker.</div></div><div class="portfolio-actions"><button class="btn" id="newProject">+ Empty Project</button><button class="btn primary" id="portfolioUpload">+ Upload Project</button><input class="portfolio-upload" type="file" id="portfolioFile" accept="*/*"></div></div><div id="projectList"></div></div><div class="panel"><h3>Portfolio Health</h3><div id="portfolioHealth"></div><hr style="border-color:var(--line)"><div class="mini muted">Projects are stored locally in this browser. Each project keeps its own tracker, snapshots and workbook intelligence.</div></div></div></section>
 <section class="section" id="tracker"><div class="panel"><div class="row"><h3 class="grow">Delivery Tracker</h3><select id="statusFilter"><option value="">All status</option><option>Delayed</option><option>Overdue</option><option>At Risk</option><option>On Track</option><option>Completed</option></select><button class="btn" id="exportCsv">Export CSV</button></div><div class="tablewrap"><table><thead><tr><th>Task</th><th>Status</th><th>Stream</th><th>PIC</th><th>ETA / Commit</th><th>Priority</th><th>Dependency / Blocker</th><th>PMO Action</th></tr></thead><tbody id="taskRows"></tbody></table></div></div></section>
 <section class="section" id="changes"><div class="layout"><div class="panel"><h3>Reporting-cycle Change Intelligence</h3><div class="muted mini">Compares the current tracker against the most recent saved baseline.</div><div id="changeList" style="margin-top:12px"></div></div><div class="panel"><h3>Snapshot Control</h3><div class="row"><button class="btn good" id="saveSnapshot">Save Current Snapshot</button><button class="btn danger" id="clearSnapshots">Clear Project Snapshots</button></div><p class="mini muted">Snapshots capture status, PIC and commitment movement between reporting cycles.</p><div id="snapshotInfo"></div></div></div></section>
@@ -762,6 +762,25 @@ function renderRootCause(){
   box.innerHTML='<div class="alert '+(/delayed|overdue|risk|blocked/i.test(String(t.status))?'critical':'')+'"><b>Evidence-based finding</b><br><span class="mini muted">'+esc(evidence.join(' · ')||'No supporting fields captured')+'</span></div><div class="chain" style="margin:12px 0">'+chain.map((n,i)=>'<div class="chain-node">'+esc(n.label)+'</div>'+(i<chain.length-1?'<span class="chain-arrow">→</span>':'')).join('')+'</div><div class="mini muted">Interpretation: the system only infers a cause when the tracker contains supporting fields. Missing evidence is shown as a gap rather than invented as fact.</div>';
 }
 function addDaysSafe(v,days){const d=parseDateValue(v);if(!d)return null;d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
+function renderRecoveryOptimizer(){
+  const box=document.getElementById('recoveryQueue'),k=document.getElementById('recoveryOptimizerKpis');if(!box||!k)return;
+  const tasks=project().tasks||[];
+  const score=t=>{
+    const s=String(t.status||''),p=String(t.priority||''),dep=String(t.dependency||''),eta=String(t.eta||'');
+    let n=0;
+    if(/overdue/i.test(s))n+=45;else if(/delayed/i.test(s))n+=40;else if(/risk|blocked/i.test(s))n+=28;
+    if(/critical/i.test(p))n+=25;else if(/high/i.test(p))n+=18;else if(/medium/i.test(p))n+=8;
+    if(dep&& !/^tbc|^n\/a$/i.test(dep))n+=10;
+    if(eta&&eta!=='TBC'&&new Date(eta)<Date.now())n+=10;
+    const pct=parseFloat(String(t.percent||'').replace('%',''));if(!isNaN(pct)&&pct<50)n+=5;
+    return Math.min(100,n);
+  };
+  const rows=tasks.filter(t=>/delayed|overdue|risk|blocked/i.test(String(t.status||''))).map(t=>({t,s:score(t)})).sort((a,b)=>b.s-a.s).slice(0,10);
+  const delayed=tasks.filter(t=>/delayed|overdue/i.test(String(t.status||''))).length;
+  const risk=tasks.filter(t=>/risk|blocked/i.test(String(t.status||''))).length;
+  k.innerHTML='<div class="scenario-stat"><span class="mini muted">Recovery candidates</span><b>'+rows.length+'</b></div><div class="scenario-stat"><span class="mini muted">Delayed / overdue</span><b class="'+(delayed?'red':'green')+'">'+delayed+'</b></div><div class="scenario-stat"><span class="mini muted">At risk / blocked</span><b class="'+(risk?'amber':'green')+'">'+risk+'</b></div><div class="scenario-stat"><span class="mini muted">Top exposure</span><b>'+(rows[0]?rows[0].s:0)+'</b></div>';
+  box.innerHTML=rows.length?rows.map((x,i)=>'<div class="alert '+(x.s>=70?'critical':'')+'"><div class="row"><b>'+esc(x.t.task)+'</b><span class="tag '+(x.s>=70?'red':'amber')+'">Score '+x.s+'</span></div><div class="mini muted" style="margin-top:5px">Status: '+esc(x.t.status||'')+' · Priority: '+esc(x.t.priority||'Normal')+' · PIC: '+esc(x.t.pic||'TBC')+' · ETA: '+esc(x.t.eta||'TBC')+'</div><div class="mini" style="margin-top:5px"><b>Recovery focus:</b> '+esc(x.t.action||'Confirm root cause, recovery owner, dependency and committed recovery date.')+'</div></div>').join(''):'<div class="alert good"><b>No recovery candidate identified.</b><br><span class="mini muted">Current tracker has no delayed, overdue, at-risk or blocked activity.</span></div>';
+}
 function renderWhatIf(){
   const t=selectedTask('whatIfTask'),box=document.getElementById('whatIfView');if(!box)return;
   const days=Number(document.getElementById('whatIfDays')?.value||5);
@@ -913,8 +932,9 @@ document.getElementById('rootCauseAdvisor').onclick=()=>{const t=selectedTask('r
 document.getElementById('whatIfTask').onchange=renderWhatIf;
 document.getElementById('whatIfDays').oninput=e=>{document.getElementById('whatIfDaysLabel').textContent='+'+e.target.value+' days';renderWhatIf()};
 document.getElementById('runWhatIf').onclick=renderWhatIf;
+document.getElementById('refreshRecoveryOptimizer').onclick=renderRecoveryOptimizer;
 
-const projectMindInitChecks=[['AI Command Center',()=>renderCommandAI()],['Dependency Graph',()=>initDependencyGraph()],['Critical Path',()=>renderCriticalPath()],['Dashboard',()=>render()]];
+const projectMindInitChecks=[['AI Command Center',()=>renderCommandAI()],['Dependency Graph',()=>initDependencyGraph()],['Critical Path',()=>renderCriticalPath()],['Recovery Optimizer',()=>renderRecoveryOptimizer()],['Dashboard',()=>render()]];
 const projectMindInitErrors=[];
 projectMindInitChecks.forEach(([name,fn])=>{try{fn()}catch(e){projectMindInitErrors.push(name);console.error('ProjectMind initialization failed: '+name,e)}});
 window.projectMindHealth={status:projectMindInitErrors.length?'degraded':'healthy',failedModules:projectMindInitErrors,checkedAt:new Date().toISOString()};
