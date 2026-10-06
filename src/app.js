@@ -34,7 +34,7 @@ export default {
         description:'Project intelligence, monitoring and AI command center.',
         icons:[
           {src:'/assets/projectmind-icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'},
-          {src:'/assets/projectmind-icon-512.png',sizes:'192x192',type:'image/png',purpose:'any maskable'}
+          {src:'/assets/projectmind-icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'}
         ]
       }),{headers:{'content-type':'application/manifest+json;charset=UTF-8','cache-control':'no-store'}});
     }
