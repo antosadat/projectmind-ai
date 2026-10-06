@@ -24,11 +24,18 @@ export default {
       return new Response(JSON.stringify({
         name:'Project Intelligence',
         short_name:'ProjectMind',
+        id:'/',
         start_url:'/',
+        scope:'/',
         display:'standalone',
+        display_override:['window-controls-overlay','standalone'],
         background_color:'#07111f',
         theme_color:'#07111f',
-        description:'Project intelligence, monitoring and AI command center.'
+        description:'Project intelligence, monitoring and AI command center.',
+        icons:[
+          {src:'/assets/projectmind-icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'},
+          {src:'/assets/projectmind-icon-512.png',sizes:'192x192',type:'image/png',purpose:'any maskable'}
+        ]
       }),{headers:{'content-type':'application/manifest+json;charset=UTF-8','cache-control':'no-store'}});
     }
     if (url.pathname === '/sw.js') {
