@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         WebView web = new WebView(this);
+        web.setTag("projectmind-webview");
         setContentView(web);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -23,22 +24,13 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 view.evaluateJavascript(
-                    "(function(){window.ProjectMindWidget&&ProjectMindWidget.startPolling();})();", null);
+                    "(function(){if(window.__pmWidgetTimer)return;window.__pmWidgetTimer=setInterval(function(){try{var t=document.body.innerText||'';var d=(t.match(/(\\d+)\\s+Delayed/i)||[])[1]||'0';var r=(t.match(/(\\d+)\\s+At Risk/i)||[])[1]||'0';var m=(t.match(/(\\d+(?:\\.\\d+)?)%/)||[])[1]||'0';ProjectMindWidget.update(d,r,m+'%')}catch(e){}} ,10000);})();", null);
             }
         });
         web.loadUrl(PROJECT_URL);
     }
 
     public class WidgetBridge {
-        @JavascriptInterface public void startPolling() {
-            final WebView w = (WebView) findViewById(android.R.id.content).findViewWithTag("projectmind-webview");
-            runOnUiThread(new Runnable() {
-                @Override public void run() {
-                    // Kept for compatibility; the polling script is injected below.
-                }
-            });
-        }
-
         @JavascriptInterface public void update(String delayed, String risk, String progress) {
             getSharedPreferences("projectmind", MODE_PRIVATE).edit()
                 .putString("delayed", delayed).putString("risk", risk)
