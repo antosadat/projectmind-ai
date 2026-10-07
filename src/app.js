@@ -60,7 +60,6 @@ export default {
     securityHeaders.set('x-content-type-options','nosniff');
     securityHeaders.set('referrer-policy','strict-origin-when-cross-origin');
     securityHeaders.set('permissions-policy','camera=(self), microphone=(self), geolocation=()');
-    const url = new URL(request.url);
     const ct = response.headers.get('content-type') || '';
     if (url.pathname === '/agentic-workbook.js') {
       return new Response(agenticScript,{headers:{'content-type':'application/javascript;charset=UTF-8','cache-control':'no-store'}});
@@ -95,7 +94,8 @@ export default {
       const placed = branded.includes(monthlyMarker)
         ? branded.replace(monthlyMarker, delayedDashboard + monthlyMarker)
         : branded.replace('</body>', delayedDashboard + '</body>');
-      const withFreshness = placed.replace('<div class="grid" id="kpis"></div>','<div class="grid" id="kpis"></div>'+`+JSON.stringify(freshnessPanel)+`+');
+      const freshnessPanel = '<div class="panel" id="pmDataFreshness" style="margin-top:14px"><div class="row"><div><h3 style="margin-bottom:4px">Data Freshness &amp; Governance</h3><div class="mini muted">ProjectMind private data layer · D1 + R2 · no office-system connection</div></div><span class="badge" id="pmDataStatus">Checking…</span></div><div id="pmDataFreshnessBody" class="mini muted" style="margin-top:10px">Checking latest server data…</div></div>';
+      const withFreshness = placed.replace('<div class="grid" id="kpis"></div>','<div class="grid" id="kpis"></div>'+freshnessPanel);
       const mobileLayer = \`
 <style>
 @media(max-width:760px){
