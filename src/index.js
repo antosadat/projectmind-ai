@@ -1036,29 +1036,65 @@ export default {async fetch(request,env){const url=new URL(request.url);if(url.p
   }catch(e){return Response.json({error:e.message||'Document analysis failed'},{status:500})}
 }
 if(url.pathname==='/api/chat'&&request.method==='POST'){
-  const body=await request.json(),message=String(body.message||''),history=Array.isArray(body.history)?body.history.slice(-12):[],context=body.context||{};
-  if(!message.trim())return Response.json({reply:'Silakan tulis pertanyaan atau kebutuhan Anda.',actions:[],mode:'local'});
+  const body=await request.json(),message=String(body.message||''),history=Array.isArray(body.history)?body.history.slice(-16):[],context=body.context||{};
+  if(!message.trim())return Response.json({reply:'Silakan tulis pertanyaan atau kebutuhan Anda.',actions:[],mode:'local',intent:'empty'});
+
   const safety=localChatSafety(message);
-  if(safety.unsafe)return Response.json({reply:safeChatReply(),actions:[],mode:'safety'});
+  if(safety.unsafe)return Response.json({reply:safeChatReply(),actions:[],mode:'safety',intent:'safety_block'});
+
   const local=localAgentReply(message,context);
-  if(!env.OPENAI_API_KEY)return Response.json({reply:local,actions:[],mode:'local'});
+  if(!env.OPENAI_API_KEY)return Response.json({reply:local,actions:[],mode:'local',intent:'local_fallback'});
+
   try{
-    const system='You are ProjectMind AI Agent, a general-purpose natural-language assistant embedded in the ProjectMind project intelligence dashboard. Your first job is to understand what the user means, not to force the user into predefined keywords. Treat Indonesian, English, mixed language, abbreviations, slang, typo, phonetic spelling, shorthand, incomplete sentences, chat-style fragments, indirect requests, questions without punctuation, and colloquial business language as valid input. Infer intent from the whole message plus recent conversation. If the intent is ambiguous, ask one short clarification question instead of guessing. Match the user language and requested output format.
+    const compactContext={
+      project:context?.project||'',
+      tasks:Array.isArray(context?.tasks)?context.tasks.slice(0,160):[],
+      changes:Array.isArray(context?.changes)?context.changes.slice(-50):[],
+      documents:Array.isArray(context?.documents)?context.documents.slice(0,30):[],
+      latestDocumentAnalysis:String(context?.latestDocumentAnalysis||'').slice(0,12000),
+      workbookIntelligence:context?.workbookIntelligence||null,
+      needAttention:Array.isArray(context?.needAttention)?context.needAttention.slice(0,30):[],
+      capabilities:Array.isArray(context?.capabilities)?context.capabilities:[]
+    };
 
-When the request is project-related, use CURRENT PROJECT CONTEXT as the source of truth and connect the answer to concrete task names, statuses, dates, PICs, dependencies, documents, workbook intelligence, changes and evidence when available. You can handle PMO, solution, implementation, testing, monitoring, recovery, critical path, risk, dependency, escalation, documentation, analysis, comparison, drafting and ordinary questions. Do not force a project answer when the user is asking a general question.
+    const system='You are ProjectMind Conversational Intelligence V2, an expert natural-language agent embedded in a project intelligence dashboard. Your primary task is semantic understanding: understand what the user MEANS, not merely which keywords they typed. Accept Indonesian, English, mixed language, abbreviations, slang, typos, phonetic spelling, shorthand, incomplete sentences, chat fragments, indirect requests, business jargon and casual wording. Use the current message, recent conversation and project context together.\n\nINTENT TAXONOMY: classify the underlying intent into one of: general_question, project_health, delay_analysis, risk_analysis, priority, recovery, dependency_impact, critical_path, solution_review, implementation_review, testing_review, monitoring_review, document_analysis, project_comparison, management_escalation, task_lookup, task_update_request, need_attention_request, draft_request, data_quality, clarification_needed, safety_block, unknown. This list is a guide, not a keyword matcher.\n\nSEMANTIC EXAMPLES: "yang molor", "yang ketahan", "yang belum kelar", "mana yang bikin timeline mundur" usually mean delay/recovery; "mana yang paling bahaya", "yang urgent apa", "mana dulu" usually mean risk/priority; "gimana cara ngejar", "balik ke plan", "masih bisa recover?" usually mean recovery; "apa yang dibawa ke management", "apa yang perlu diangkat" means escalation; "posisi kita", "sudah aman belum", "kondisi project" means health; "solution-nya proper nggak", "solusi ini bener nggak" means solution review; "testing cukup belum", "test case apa yang kurang" means testing review. These examples are not exhaustive.\n\nENTITY UNDERSTANDING: identify project, task names, stream/workstream, PIC, dates, statuses, dependencies, documents, numbers and requested output format when present. Resolve references such as "task itu", "yang tadi", "yang merah", "item kedua", "yang paling parah" using recent conversation and context. If a reference cannot be resolved reliably, ask one concise clarification question.\n\nREASONING: for project questions, ground the answer in supplied context. Do not invent facts. Distinguish observed facts from inference and recommendation. If the user asks "why", explain likely root cause only when evidence supports it; otherwise mark it as an assumption/gap. If the user asks for a comparison, use a concise table when useful. If the user asks for a plan, give ordered actions with owner/timing/acceptance when available. If the user asks for a draft, produce the requested draft directly.\n\nCONVERSATION: use recent history to understand follow-ups such as "why?", "then what?", "yang nomor 2 gimana?", "buatkan", "lanjut", "ubah jadi English", and "yang tadi maksud saya...". Do not restart the conversation context on every turn.\n\nSAFETY: if the message is clearly profanity, obscene/sexual content, racial or ethnic slurs, hateful/discriminatory abuse, harassment, threats or clearly inappropriate/offensive content, do not repeat or elaborate on it. Politely refuse and invite respectful rephrasing. If sensitive terms are used for legitimate education, moderation, compliance or analysis, answer the legitimate underlying question without unnecessary repetition.\n\nACTION SAFETY: only populate actions when the user explicitly asks to change, create, update or execute something. Actions are proposals only; never claim they were applied.\n\nOUTPUT: return valid JSON only. Schema: {"reply":"direct answer in the user's language","intent":"one taxonomy value","confidence":0.0,"entities":{"project":"","task":"","stream":"","pic":"","date":"","status":"","topic":""},"clarification_needed":false,"recommendation":"","actions":[]}. If clarification is needed, set clarification_needed=true and make reply a single concise clarification question. Confidence is 0 to 1. Keep answers concise by default but match requested detail and format.';
 
-Interpret natural-language equivalents semantically. Examples: "yang molor", "yang ketahan", "yang belum kelar", "mana yang bikin timeline mundur" => delay/recovery analysis; "mana yang paling bahaya", "mana dulu yang dikerjain", "yang urgent apa" => priority/risk; "gimana biar balik ke plan", "cara ngejar", "bisa recover nggak" => recovery; "apa yang harus dibawa ke management", "apa yang perlu diangkat" => escalation; "sudah aman belum", "posisi kita gimana" => health/status; "cek solution", "solusinya proper nggak", "apa yang kurang" => solution review; "testing-nya cukup belum", "apa test case yang kurang" => professional testing; "monitoring-nya gimana" => monitoring. These are examples, not a closed list. Always infer the underlying intent rather than matching exact words.
+    const input=[
+      {role:'system',content:system},
+      {role:'system',content:'CURRENT PROJECT CONTEXT:\n'+JSON.stringify(compactContext)},
+      ...history.filter(x=>x&&x.content).map(x=>({role:x.role==='assistant'?'assistant':'user',content:String(x.content)})),
+      {role:'user',content:message}
+    ];
 
-For safety: if the message is clearly profanity, obscene/sexual content, racial or ethnic slurs, hateful/discriminatory abuse, harassment, threats, or clearly inappropriate/offensive content, do not repeat or elaborate on it. Respond politely that you cannot help with that topic and invite respectful rephrasing. If sensitive words appear in a legitimate educational, moderation, compliance or analytical context, answer the legitimate underlying question without unnecessary repetition. Do not infer sensitive personal attributes.
-
-Use facts from context only when present. Never invent project facts. Clearly label assumptions or recommendations. If data is insufficient, say what is missing and what can still be concluded.
-
-Return STRICT JSON only with exactly this shape: {"reply":"answer to the user's actual request","recommendation":"optional next step; empty string if not needed","visuals":[],"actions":[]}. "visuals" may contain chart, flow, table or callout objects only when useful. "actions" may contain update_task or create_need_attention only when the user explicitly asks to change, create, update or execute something. Never claim an action was applied; the UI requires confirmation. Keep the answer concise by default and detailed when requested.';    const compactContext={...context,tasks:Array.isArray(context?.tasks)?context.tasks.slice(0,120):[],changes:Array.isArray(context?.changes)?context.changes.slice(-40):[]};
-    const messages=[{role:'system',content:system},{role:'system',content:'CURRENT PROJECT CONTEXT:\n'+JSON.stringify(compactContext)},...history.filter(x=>x&&x.content).map(x=>({role:x.role==='assistant'?'assistant':'user',content:String(x.content)}))];
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-4.1-mini',messages,temperature:.2,response_format:{type:'json_object'}})});
-    const data=await res.json(),raw=data.choices?.[0]?.message?.content;
-    let parsed;try{parsed=JSON.parse(raw)}catch(e){parsed={reply:raw||local,actions:[]}}
-    return res.ok&&parsed.reply?Response.json({reply:parsed.reply,actions:Array.isArray(parsed.actions)?parsed.actions:[],mode:'ai'}):Response.json({reply:local,actions:[],mode:'local'});
-  }catch(e){return Response.json({reply:local,mode:'local'})}
+    const res=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:env.OPENAI_MODEL||'gpt-6-luna',
+        input,
+        temperature:.15,
+        max_output_tokens:2200,
+        text:{format:{type:'json_object'}}
+      })
+    });
+    const data=await res.json();
+    const raw=data.output_text||data.output?.flatMap(x=>x.content||[]).map(x=>x.text||'').filter(Boolean).join('\n')||'';
+    let parsed;
+    try{parsed=JSON.parse(raw)}catch(e){parsed={reply:raw||local,actions:[],intent:'unknown',confidence:0}};
+    if(!res.ok||!parsed.reply)return Response.json({reply:local,actions:[],mode:'local',intent:'local_fallback',confidence:0});
+    return Response.json({
+      reply:String(parsed.reply),
+      recommendation:String(parsed.recommendation||''),
+      actions:Array.isArray(parsed.actions)?parsed.actions:[],
+      intent:String(parsed.intent||'unknown'),
+      confidence:Number.isFinite(Number(parsed.confidence))?Number(parsed.confidence):0,
+      entities:parsed.entities||{},
+      clarification_needed:!!parsed.clarification_needed,
+      mode:'ai-v2'
+    });
+  }catch(e){
+    console.error('ProjectMind Conversational Intelligence V2 error',e);
+    return Response.json({reply:local,actions:[],mode:'local_fallback',intent:'local_fallback',confidence:0});
+  }
 }
 if(url.pathname==='/api/analyze'&&request.method==='POST'){const body=await request.json(),tasks=Array.isArray(body.tasks)?body.tasks:[],changes=Array.isArray(body.changes)?body.changes:[],question=String(body.question||'Provide PMO analysis'),local=fallbackReport(tasks,changes,question);if(!env.OPENAI_API_KEY)return Response.json({report:local,mode:'local'});try{const model=env.OPENAI_MODEL||'gpt-4.1-mini',prompt='Question: '+question+'\n\nTracker:\n'+JSON.stringify(tasks)+'\n\nChanges:\n'+JSON.stringify(changes),res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENAI_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:'You are a senior global PMO and recovery manager. Give concise, decision-oriented analysis grounded only in supplied tracker data. Do not invent facts.'},{role:'user',content:prompt}],temperature:.2})}),data=await res.json();return res.ok?Response.json({report:data.choices?.[0]?.message?.content||local,mode:'ai'}):Response.json({report:local,mode:'local'})}catch(e){return Response.json({report:local,mode:'local'})}}return new Response(html,{headers:{'content-type':'text/html;charset=UTF-8','cache-control':'no-store'}})}};
