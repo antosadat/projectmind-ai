@@ -2,5 +2,19 @@
   "name": "projectmind",
   "main": "src/app.js",
   "compatibility_date": "2026-09-02",
-  "workers_dev": true
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "PROJECTMIND_DB"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "projectmind-documents"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 * * * *"]
+  }
 }
