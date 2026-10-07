@@ -2,6 +2,7 @@ import base from './interactive.js';
 import { kpiOverlay } from './kpi-overlay.js';
 import { delayedDashboard } from './delayed-dashboard.js';
 import agenticScript from './agentic-workbook.js';
+import { requireAccess, listProjects, getProject, syncProject, storeDocument, runFreshnessAudit } from './data-layer.js';
 
 const OLD='ProjectMind AI';
 const BRAND='Project Intelligence';
@@ -9,6 +10,51 @@ const BG_SOURCE='https://cdn.jsdelivr.net/gh/antosadat/projectmind-ai@e0331c8130
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/data/')) {
+      const identity = await requireAccess(ctx);
+      if (!identity) {
+        return Response.json({error:'ProjectMind data layer requires Cloudflare Access authentication.'},{status:403,headers:{'cache-control':'no-store'}});
+      }
+      try {
+        if (!env.PROJECTMIND_DB) {
+          return Response.json({error:'ProjectMind D1 binding is not available yet. Deploy the latest Worker so the private data resources can be provisioned.'},{status:503,headers:{'cache-control':'no-store'}});
+        }
+        if (url.pathname === '/api/data/projects' && request.method === 'GET') {
+          return Response.json({projects:await listProjects(env.PROJECTMIND_DB)},{headers:{'cache-control':'no-store'}});
+        }
+        if (url.pathname === '/api/data/project' && request.method === 'GET') {
+          const projectId=url.searchParams.get('id')||'';
+          const p=await getProject(env.PROJECTMIND_DB,projectId);
+          return p?Response.json({project:p},{headers:{'cache-control':'no-store'}}):Response.json({error:'Project not found'},{status:404});
+        }
+        if (url.pathname === '/api/data/refresh' && request.method === 'POST') {
+          const body=await request.json();
+          const result=await syncProject(env.PROJECTMIND_DB,body,ctx);
+          return Response.json({ok:true,...result},{headers:{'cache-control':'no-store'}});
+        }
+        if (url.pathname === '/api/data/upload' && request.method === 'PUT') {
+          const projectId=url.searchParams.get('projectId')||'';
+          const filename=url.searchParams.get('filename')||'project-file';
+          const length=Number(request.headers.get('content-length')||0);
+          if(!projectId)return Response.json({error:'projectId is required'},{status:400});
+          if(length>25*1024*1024)return Response.json({error:'File exceeds the 25 MB ProjectMind upload limit for this endpoint.'},{status:413});
+          const result=await storeDocument(env,request,projectId,filename);
+          return Response.json({ok:true,...result},{headers:{'cache-control':'no-store'}});
+        }
+        if (url.pathname === '/api/data/health' && request.method === 'GET') {
+          const projectId=url.searchParams.get('id')||'';
+          const p=await getProject(env.PROJECTMIND_DB,projectId);
+          return Response.json({ok:true,configured:true,project:p?{id:p.id,name:p.name,lastUpdatedAt:p.last_updated_at,dataDate:p.data_date,recordCount:p.record_count,dataQuality:p.data_quality,version:p.version,freshness:p.freshness}:null},{headers:{'cache-control':'no-store'}});
+        }
+        return Response.json({error:'Data API route not found'},{status:404});
+      } catch(e) {
+        console.error('ProjectMind data API error',e);
+        return Response.json({error:e?.message||'ProjectMind data layer error'},{status:500,headers:{'cache-control':'no-store'}});
+      }
+    }
+
     const response = await base.fetch(request, env, ctx);
     const securityHeaders = new Headers(response.headers);
     securityHeaders.set('x-content-type-options','nosniff');
@@ -49,6 +95,7 @@ export default {
       const placed = branded.includes(monthlyMarker)
         ? branded.replace(monthlyMarker, delayedDashboard + monthlyMarker)
         : branded.replace('</body>', delayedDashboard + '</body>');
+      const withFreshness = placed.replace('<div class="grid" id="kpis"></div>','<div class="grid" id="kpis"></div>'+`+JSON.stringify(freshnessPanel)+`+');
       const mobileLayer = \`
 <style>
 @media(max-width:760px){
@@ -106,14 +153,22 @@ export default {
   if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
 })();
 </script>\`;
-      const injected = placed
+      const injected = withFreshness
         .replace('<head>','<head><link rel="manifest" href="/manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">')
-        .replace('</body>', mobileLayer + kpiOverlay + '<script src="/agentic-workbook.js"></script></body>');
+        .replace('</body>', clientScript + mobileLayer + kpiOverlay + '<script src="/agentic-workbook.js"></script></body>');
       const headers = new Headers(response.headers);
       headers.set('content-type','text/html;charset=UTF-8');
       headers.set('cache-control','no-store, no-cache, must-revalidate');
       return new Response(injected,{status:response.status,headers});
     }
     return new Response(response.body,{status:response.status,statusText:response.statusText,headers:securityHeaders});
+  },
+  async scheduled(controller, env, ctx) {
+    try {
+      await runFreshnessAudit(env.PROJECTMIND_DB);
+      console.log('ProjectMind freshness audit completed', controller.cron);
+    } catch(e) {
+      console.error('ProjectMind freshness audit failed', e);
+    }
   }
 };
