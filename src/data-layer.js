@@ -1,4 +1,4 @@
-const MAX_TASKS = 5000;
+const MAX_TASKS = 3000;
 const STALE_HOURS = 30;
 
 const SCHEMA = `CREATE TABLE IF NOT EXISTS projects (
@@ -123,9 +123,9 @@ function freshness(lastUpdated){
   const ageMinutes=Math.max(0,Math.round((Date.now()-new Date(lastUpdated).getTime())/60000));
   return {status:ageMinutes<=STALE_HOURS*60?'FRESH':'STALE',ageMinutes};
 }
-function actorFrom(ctx){
+async function actorFrom(ctx){
   try{
-    const i=ctx?.access?.getIdentity ? ctx.access.getIdentity() : null;
+    const i=ctx?.access?.getIdentity ? await ctx.access.getIdentity() : null;
     return i?.email || i?.user_uuid || 'authenticated-user';
   }catch(e){return 'authenticated-user'}
 }
