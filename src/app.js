@@ -153,6 +153,10 @@ export default {
   if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
 })();
 </script>`;
+      const withFreshness = placed.includes('<section class="section" id="data">')
+        ? placed.replace('<section class="section" id="data">', '<section class="section" id="data">' + governanceImport + freshnessPanel)
+        : placed.replace('</body>', governanceImport + freshnessPanel + '</body>');
+      const clientScript = '';
       const injected = withFreshness
         .replace('<head>','<head><link rel="manifest" href="/manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">')
         .replace('</body>', clientScript + mobileLayer + kpiOverlay + '<script src="/agentic-workbook.js"></script></body>');
