@@ -81,7 +81,7 @@ function changes(){let p=project(),sn=(state.snapshots[p.id]||[]);if(!sn.length)
 function metrics(){let t=project().tasks,ch=changes(),over=t.filter(x=>/delayed|overdue/i.test(x.status)).length,ar=t.filter(x=>/risk/i.test(x.status)).length,done=t.filter(x=>/complete/i.test(x.status)).length,missing=t.filter(x=>!x.pic||x.pic==='TBC'||!x.eta||x.eta==='TBC').length;return{total:t.length,over,risk:ar,done,missing,changed:ch.length,deter:ch.filter(x=>x.type==='DETERIORATED').length}}
 function projectProgress(){
  const tasks=project().tasks||[],day=86400000,today=new Date();today.setHours(0,0,0,0);
- const date=v=>{if(!v)return NaN;const d=new Date(v);if(!isNaN(d))return d.getTime();const m=String(v).match(/^(\\d{1,2})[\\/.-](\\d{1,2})[\\/.-](\\d{4})$/);return m?new Date(+m[3],+m[2]-1,+m[1]).getTime():NaN};
+  const date=v=>{if(!v)return NaN;const m=String(v).trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(m)return new Date(+m[3],+m[2]-1,+m[1]).getTime();const d=new Date(v);return isNaN(d)?NaN:d.getTime()};
  const valid=tasks.map(t=>{const start=date(t.baselineStart),finish=date(t.baselineFinish);return {...t,start,finish,duration:Math.max(1,Math.round((finish-start)/day)+1)}}).filter(t=>Number.isFinite(t.start)&&Number.isFinite(t.finish)&&t.finish>=t.start);
  const weight=valid.reduce((n,t)=>n+t.duration,0);if(!weight)return null;
  const clamp=v=>Math.max(0,Math.min(1,v));
