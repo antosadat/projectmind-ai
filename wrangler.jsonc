@@ -1,5 +1,5 @@
 {
-  "name": "projectmind",
+  "name": "projectmind-ai",
   "main": "src/app.js",
   "compatibility_date": "2026-09-02",
   "workers_dev": true
