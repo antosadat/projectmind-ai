@@ -1,0 +1,66 @@
+name: Cloudflare Worker - Manual Production Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Git ref to deploy (branch, tag or commit SHA)"
+        required: true
+        default: "fallback/process-file-61191f8"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-intelligence-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Worker bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout selected version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate Cloudflare bundle without deploying
+        run: npx wrangler deploy --dry-run --outdir dist/worker-check
+
+  deploy:
+    name: Deploy production (approval required when environment protection is configured)
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout selected version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Deploy to existing Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          npx wrangler deploy --name projectmind-ai
