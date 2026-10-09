@@ -240,7 +240,7 @@ document.getElementById('processImportFile').onclick=async()=>{
   const btn=document.getElementById('processImportFile');btn.disabled=true;btn.textContent='Processing…';
   setGovernanceImportStatus('Reading '+f.name+' and preparing project data…');
   try{
-    if(/\.(xlsx|xls|csv)$/i.test(f.name) || /spreadsheet|excel|csv/i.test(f.type||'')){
+    if(/\\.(xlsx|xls|csv)$/i.test(f.name) || /spreadsheet|excel|csv/i.test(f.type||'')){
       const buffer=await f.arrayBuffer();
       const wb=XLSX.read(new Uint8Array(buffer),{type:'array',cellDates:true});
       const sheets=scanWorkbook(wb);
