@@ -216,7 +216,7 @@ export async function syncProject(db,payload,ctx){
 }
 
 export async function storeDocument(env,request,projectId,fileName){
-  if(!env.R2)throw new Error('ProjectMind R2 binding is not configured');
+  if(!env.R2)return {stored:false,reason:'Cloud file archival is disabled. Process the file locally in Data & Governance; the original file is not uploaded.',storage:'browser'};
   const safe=clean(fileName||'project-file',180).replace(/[^a-zA-Z0-9._-]+/g,'_');
   const key=`projects/${id(projectId)}/${Date.now()}-${safe}`;
   const obj=await env.R2.put(key,request.body,{httpMetadata:{contentType:request.headers.get('content-type')||'application/octet-stream'},customMetadata:{projectId:id(projectId),originalName:safe}});
