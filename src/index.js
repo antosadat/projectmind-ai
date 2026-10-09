@@ -39,7 +39,7 @@ const html = String.raw`<!doctype html>
 <section class="section" id="recovery"><div class="layout"><div class="panel"><h3>Recovery Plan</h3><div id="recoveryPlan"></div></div><div class="panel"><h3>Recovery Governance Rules</h3><div class="alert critical"><b>No silent ETA movement.</b><br><span class="mini muted">Any revised commitment must retain an accountable PIC and corrective action.</span></div><div class="alert"><b>Dependencies before dates.</b><br><span class="mini muted">Recovery is not credible until upstream blockers are visible and owned.</span></div><div class="alert good"><b>Close the loop.</b><br><span class="mini muted">Final solutions should be reflected in related solution documents before the next control point.</span></div></div></div></section>
 <section class="section" id="executive"><div class="split"><div class="panel"><div class="row"><h3 class="grow">Executive Daily Brief</h3><button class="btn primary" id="generateBrief">Generate</button><button class="btn" id="copyBrief">Copy</button><button class="btn good" id="exportPpt">Export Executive PPT</button></div><textarea id="brief" placeholder="Generate an executive-ready project brief."></textarea></div><div class="panel"><h3>Management Focus</h3><div id="managementFocus"></div></div></div></section>
 <section class="section" id="advisor"><div class="layout"><div class="panel"><div class="row"><div><h3>AI Advisor · Universal Document Analyst</h3><div class="mini muted">Upload any supported project document and get concise expert analysis.</div></div><div><input type="file" id="advisorFile" accept="*/*"></div></div><div class="row" style="margin-top:10px"><button class="btn primary" id="analyseDocument">Analyse Document</button><button class="btn" id="analyseCurrentProject">Analyse Current Project</button></div><div id="documentMeta" class="mini muted" style="margin-top:10px"></div><div class="advisor-output" id="visualEvidence"><div class="muted mini">Visual evidence from the uploaded document will appear here when available.</div></div><div class="advisor-output" id="documentAnalysis"><div class="muted mini">Analysis output will appear here.</div></div><hr style="border-color:var(--line);margin:18px 0"><h3>Ask the Advisor</h3><textarea id="question" placeholder="Tulis apa saja dengan bahasa bebas. Contoh: review dokumen ini, jelaskan masalah utamanya, bandingkan opsi solusi, buatkan test scenario, cek risiko implementasi, atau tanyakan hal lain sesuai konteks project."></textarea><div class="row" style="margin-top:10px"><button class="btn primary" id="askAI">Analyse</button></div><div id="aiAnswerRich" class="advisor-output" style="margin-top:12px"><div class="muted mini">Jawaban Advisor akan muncul di sini dalam bentuk analisa + visual.</div></div><textarea id="aiAnswer" placeholder="Text fallback / copyable answer." style="margin-top:12px;min-height:120px"></textarea></div><div class="panel"><h3>Expert Modes</h3><div class="alert"><b>Solution Expert</b><br><span class="mini muted">Validate objective, architecture, assumptions, gaps and propose a proper solution.</span></div><div class="alert"><b>Implementation Expert</b><br><span class="mini muted">Translate requirements into practical implementation steps, dependencies and acceptance criteria.</span></div><div class="alert"><b>Professional Tester</b><br><span class="mini muted">Identify testability gaps, coverage gaps, scenarios, risks and entry/exit criteria.</span></div><div class="alert"><b>Monitoring / PMO</b><br><span class="mini muted">Identify KPI, controls, ownership, alerts, governance and operational risks.</span></div><div class="alert good"><b>Full-Stack Review</b><br><span class="mini muted">Review UI, API, data, integration, security, deployment and operational readiness as one solution.</span></div><div class="mini muted" style="margin-top:12px">Output format: Objective → Strengths → Weaknesses / Gaps → Proper Solution → Recommended Output → Testing → Monitoring → Implementation Next Steps.</div></div></div></section>
-<section class="section" id="data"><div class="layout"><div class="panel"><div class="row"><div><h3 style="margin-bottom:4px">Import Project Tracker</h3><div class="mini muted">Import workbook, CSV or supported project document into the active ProjectMind project.</div></div><button class="btn primary" id="dataImportBtn">⬆ Import / Upload</button><input type="file" id="file" accept="*/*" style="display:none"></div><div class="drop" id="dataDrop" style="margin-top:12px;cursor:pointer"><b>Drop file here or click Import / Upload</b><p>Spreadsheets are analysed across all worksheets automatically. Task-like rows are consolidated and project intelligence is refreshed. Other supported documents are routed to the Universal Document Analyst.</p></div><div id="mapping" class="mini muted" style="margin-top:10px"></div><div id="sheetControl" class="row" style="margin-top:10px"></div></div><div class="panel"><h3>Data Quality & Governance</h3><div id="quality"></div><hr style="border-color:var(--line)"><div class="row"><button class="btn warn" id="demoData">Load Demo PMO Data</button><button class="btn danger" id="clearProject">Clear Current Project Data</button></div></div></div></section>
+<section class="section" id="data"><div class="layout"><div class="panel"><div class="row"><div><h3 style="margin-bottom:4px">Import Project Tracker</h3><div class="mini muted">Import workbook, CSV or supported project document into the active ProjectMind project.</div></div><button class="btn primary" id="dataImportBtn">⬆ Choose File</button><input type="file" id="file" accept="*/*" style="display:none"></div><div class="drop" id="dataDrop" style="margin-top:12px;cursor:pointer"><b>Drop file here or click Choose File</b><p>1. Choose a workbook or CSV. 2. Click Process File to import it into the active project and refresh dashboard intelligence. Other supported documents open in AI Advisor.</p></div><div class="row" style="margin-top:10px"><div id="selectedImportFile" class="mini muted grow">No file selected.</div><button class="btn primary" id="processImportFile" disabled>▶ Process File</button></div><div id="mapping" class="mini muted" style="margin-top:10px" role="status" aria-live="polite"></div><div id="sheetControl" class="row" style="margin-top:10px"></div></div><div class="panel"><h3>Data Quality & Governance</h3><div id="quality"></div><hr style="border-color:var(--line)"><div class="row"><button class="btn warn" id="demoData">Load Demo PMO Data</button><button class="btn danger" id="clearProject">Clear Current Project Data</button></div></div></div></section>
 <button class="chat-fab" id="chatFab" title="Chat with ProjectMind Agent" aria-label="Open ProjectMind Agent">🧠</button>
 <div class="chatbox" id="chatbox" role="dialog" aria-label="ProjectMind Agent">
   <div class="chathead"><div><b>ProjectMind Agent</b><div class="mini muted">Portfolio-aware PMO Agent</div></div><button class="btn" id="chatClose" aria-label="Close chat">×</button></div>
@@ -99,7 +99,7 @@ function envSummary(rows,mode){
 function healthFromPivot(rows){
   let out={};rows.forEach(r=>{let label=String(r['Row Labels']||r['Row labels']||'').trim(),count=r['Count of Status'];if(label&&count!==''&&!isNaN(Number(count)))out[label]=Number(count)});return out
 }
-function importSheet(name){if(!importBook)return;let m=sheetMeta(importBook.Sheets[name],name),tasks=clean(m.rows);if(!tasks.length){document.getElementById('mapping').textContent='No usable task rows detected in '+name+'. Choose another worksheet.';return}project().tasks=tasks;project().fileName=importFileName;project().workbook=workbookIntelligence();save();document.getElementById('mapping').innerHTML='<b>Imported '+tasks.length+' task(s)</b> from worksheet <b>'+esc(name)+'</b> (header row '+m.headerRow+'). Executive export will also use: Timeline/MPP, Need Attention, Pivot Health, Testing, Integration Lower and Prod summaries when available.';render()}
+function importSheet(name){if(!importBook)return false;let m=sheetMeta(importBook.Sheets[name],name),tasks=clean(m.rows);if(!tasks.length){setGovernanceImportStatus('No usable task rows detected in '+name+'. Choose another worksheet.',true);return false}project().tasks=tasks;project().fileName=importFileName;project().workbook=workbookIntelligence();save();document.getElementById('mapping').innerHTML='<b>Imported '+tasks.length+' task(s)</b> from worksheet <b>'+esc(name)+'</b> (header row '+m.headerRow+'). Executive export will also use: Timeline/MPP, Need Attention, Pivot Health, Testing, Integration Lower and Prod summaries when available.';render();return true}
 function risk(t){return /delayed|overdue/i.test(t.status)?'red':/risk/i.test(t.status)?'amber':/complete/i.test(t.status)?'green':'blue'}
 function changes(){let p=project(),sn=(state.snapshots[p.id]||[]);if(!sn.length)return[];let old=sn[sn.length-1].tasks||[],map=new Map(old.map(x=>[x.task,x])),out=[];p.tasks.forEach(t=>{let o=map.get(t.task);if(!o)out.push({type:'NEW',task:t.task,detail:'New task added'});else{let d=[];if(o.status!==t.status)d.push('Status: '+o.status+' → '+t.status);if(o.pic!==t.pic)d.push('PIC: '+o.pic+' → '+t.pic);if(o.eta!==t.eta)d.push('Commit: '+o.eta+' → '+t.eta);if(d.length){let bad=!/delayed|overdue|risk/i.test(o.status)&&/delayed|overdue/i.test(t.status);out.push({type:bad?'DETERIORATED':'CHANGED',task:t.task,detail:d.join(' · ')})}}});old.forEach(o=>{if(!p.tasks.some(x=>x.task===o.task))out.push({type:'REMOVED',task:o.task,detail:'Task no longer present'})});return out}
 function pct(n,total){return total?((Number(n)||0)/total*100).toFixed(1)+'%':'0.0%'}
@@ -217,11 +217,57 @@ function renderRichAdvisor(data){
 function renderDocumentAnalysis(text){const s=String(text||'').replace(/\r/g,'');return '<div class="analysis-text">'+esc(s).replace(/\n/g,'<br>')+'</div>'}
 document.getElementById('dashboardUpload').onclick=()=>document.getElementById('dashboardFile').click();
 document.getElementById('portfolioUpload').onclick=()=>document.getElementById('portfolioFile').click();
+let selectedGovernanceFile=null;
+function setGovernanceImportStatus(message,isError=false){
+  const box=document.getElementById('mapping');
+  if(box){box.textContent=message;box.classList.toggle('red',!!isError)}
+}
+function selectGovernanceFile(file){
+  selectedGovernanceFile=file||null;
+  const label=document.getElementById('selectedImportFile'),btn=document.getElementById('processImportFile');
+  if(label)label.textContent=file?'Selected: '+file.name+' ('+Math.max(1,Math.round(file.size/1024))+' KB)':'No file selected.';
+  if(btn)btn.disabled=!file;
+  setGovernanceImportStatus(file?'File ready. Click “Process File” to import it into '+project().name+'.':'Choose a file to begin.');
+}
 document.getElementById('dataImportBtn').onclick=()=>document.getElementById('file').click();
 document.getElementById('dataDrop').onclick=()=>document.getElementById('file').click();
 document.getElementById('dataDrop').ondragover=e=>{e.preventDefault();document.getElementById('dataDrop').style.borderColor='#5791ff';};
 document.getElementById('dataDrop').ondragleave=()=>document.getElementById('dataDrop').style.borderColor='';
-document.getElementById('dataDrop').ondrop=e=>{e.preventDefault();document.getElementById('dataDrop').style.borderColor='';const f=e.dataTransfer?.files?.[0];if(f)handleProjectFile(f);};
+document.getElementById('dataDrop').ondrop=e=>{e.preventDefault();document.getElementById('dataDrop').style.borderColor='';const f=e.dataTransfer?.files?.[0];if(f)selectGovernanceFile(f);};
+document.getElementById('file').onchange=()=>{const f=document.getElementById('file').files?.[0];if(f)selectGovernanceFile(f)};
+document.getElementById('processImportFile').onclick=async()=>{
+  const f=selectedGovernanceFile;if(!f){setGovernanceImportStatus('Choose a file first.',true);return}
+  const btn=document.getElementById('processImportFile');btn.disabled=true;btn.textContent='Processing…';
+  setGovernanceImportStatus('Reading '+f.name+' and preparing project data…');
+  try{
+    if(/\\.(xlsx|xls|csv)$/i.test(f.name)){
+      const buffer=await f.arrayBuffer();
+      const wb=XLSX.read(new Uint8Array(buffer),{type:'array',cellDates:true});
+      const sheets=scanWorkbook(wb);
+      const usable=sheets.reduce((n,x)=>n+x.usable,0);
+      if(!sheets.length||!usable)throw new Error('No task-like rows were detected. Check that the workbook contains a task/activity column and a header row.');
+      importBook=wb;importFileName=f.name;
+      const best=sheets[0];
+      const target=project();
+      target.fileName=f.name;
+      const imported=importSheet(best.name);
+      if(!imported)throw new Error('The selected worksheet did not contain usable task rows.');
+      document.getElementById('sheetControl').innerHTML='<span class="badge">Processed · '+sheets.length+' worksheet(s)</span><span class="mini muted">'+usable+' task-like rows detected across the workbook; '+project().tasks.length+' tasks imported from “'+esc(best.name)+'”.</span>';
+      setGovernanceImportStatus('Success: imported '+project().tasks.length+' tasks into '+project().name+'. Dashboard, Tracker, Critical Path and Recovery Optimizer refreshed.');
+      window.dispatchEvent(new CustomEvent('projectmind:workbook-ready'));
+    }else{
+      setGovernanceImportStatus('Sending '+f.name+' to AI Advisor for document analysis…');
+      await analyseUniversalFile(f,project().id);
+      document.getElementById('tabs').querySelector('[data-tab="advisor"]').click();
+      setGovernanceImportStatus('Document sent to AI Advisor. Non-spreadsheet documents are analysed there; they do not automatically replace tracker tasks.');
+    }
+  }catch(e){
+    console.error('Data Governance import failed',e);
+    setGovernanceImportStatus('Import failed: '+(e?.message||String(e)),true);
+  }finally{
+    btn.disabled=!selectedGovernanceFile;btn.textContent='▶ Process File';
+  }
+};
 async function handleProjectFile(f){
   if(!f)return;
   const base=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'New Project';
@@ -927,7 +973,7 @@ function initDependencyGraph(){
  document.getElementById('fitDependencyGraph').onclick=renderDependencyGraph;
  renderDependencyGraph();
 }
-window.addEventListener('projectmind:workbook-ready',()=>{render();renderCommandAI();initDependencyGraph();renderCriticalPath()});
+window.addEventListener('projectmind:workbook-ready',()=>{render();renderCommandAI();initDependencyGraph();renderCriticalPath();renderRecoveryOptimizer();renderWhatIf()});
 document.getElementById('refreshCriticalPath').onclick=renderCriticalPath;
 document.getElementById('criticalTask').onchange=renderCriticalImpact;
 document.getElementById('criticalDays').oninput=e=>{document.getElementById('criticalDaysLabel').textContent='+'+e.target.value+' days';renderCriticalImpact()};
