@@ -5,7 +5,9 @@
   "workers_dev": true,
   "d1_databases": [
     {
-      "binding": "PROJECTMIND_DB"
+      "binding": "PROJECTMIND_DB",
+      "database_name": "projectmind-ai-projectmind-db",
+      "database_id": "449da5b9-0e0a-4c71-be40-19bc2d1212aa"
     }
   ],
   "triggers": {
